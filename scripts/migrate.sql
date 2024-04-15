@@ -1,4 +1,5 @@
 CREATE DATABASE University;
+
 USE University;
 
 -- Combining all accounts into a single table with a type to differentiate roles
