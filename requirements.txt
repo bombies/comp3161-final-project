@@ -2,3 +2,4 @@ Flask
 gunicorn
 Faker
 pytest
+pytest-playwright
