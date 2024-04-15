@@ -1,5 +1,9 @@
 Flask
-gunicorn
+bcrypt
+pyjwt[crypto]
 Faker
 pytest
 pytest-playwright
+mysql-connector-python
+python-dotenv
+marshmallow
