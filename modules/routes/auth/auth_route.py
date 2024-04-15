@@ -43,7 +43,7 @@ def register():
                 hashpw(body["password"].encode("utf-8"), gensalt()).decode("utf-8"),
                 body["name"],
                 body.get("contact_info"),
-                AccountType.Student.value,
+                AccountType.Student.name,
             ),
         )
 
@@ -51,7 +51,12 @@ def register():
         user_id = db_cursor.lastrowid
 
         token = jwt.encode(
-            payload={"sub": user_id, "name": body["name"], "email": body["email"]},
+            payload={
+                "sub": user_id,
+                "name": body["name"],
+                "email": body["email"],
+                "account_type": AccountType.Student.name,
+            },
             key=app.config["JWT_SECRET"],
             algorithm="HS256",
         )
@@ -98,6 +103,7 @@ def login():
                 "sub": user[0],
                 "name": user[5],
                 "email": user[1],
+                "account_type": user[3],
             },
             key=app.config["JWT_SECRET"],
             algorithm="HS256",
