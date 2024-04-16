@@ -45,17 +45,20 @@ def protected_route(roles: list[AccountType] = []):
             if directive != "Bearer":
                 return jsonify({"message": "Unauthorized"}), 401
 
-            decoded_token = jwt.decode(
-                token, app.config["JWT_SECRET"], algorithms=["HS256"]
-            )
+            try:
+                decoded_token = jwt.decode(
+                    token, app.config["JWT_SECRET"], algorithms=["HS256"]
+                )
 
-            if (
-                len(roles) != 0
-                and AccountType[decoded_token["account_type"]] not in roles
-            ):
+                if (
+                    len(roles) != 0
+                    and AccountType[decoded_token["account_type"]] not in roles
+                ):
+                    return jsonify({"message": "Unauthorized"}), 401
+
+                return handle_route(lambda: f(*args, **kwargs))
+            except jwt.DecodeError as e:
                 return jsonify({"message": "Unauthorized"}), 401
-
-            return handle_route(lambda: f(*args, **kwargs))
 
         return wrapped
 
