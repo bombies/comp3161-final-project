@@ -28,30 +28,24 @@ def protected_route(roles: list[AccountType] = []):
     def decorator(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
-            try:
-                if not request:
-                    return (
-                        jsonify(
-                            {
-                                "message": "The @protected_route decorator can't be used because it isn't for an endpoint function!"
-                            }
-                        ),
-                        500,
-                    )
+            if not request:
+                return (
+                    jsonify(
+                        {
+                            "message": "The @protected_route decorator can't be used because it isn't for an endpoint function!"
+                        }
+                    ),
+                    500,
+                )
 
-                session = fetch_session()
-                if not session:
-                    return jsonify({"message": "Unauthorized"}), 401
-
-                if (
-                    len(roles) != 0
-                    and AccountType[session["account_type"]] not in roles
-                ):
-                    return jsonify({"message": "Unauthorized"}), 401
-
-                return handle_route(lambda: f(*args, **kwargs))
-            except ValueError:
+            session = fetch_session()
+            if not session:
                 return jsonify({"message": "Unauthorized"}), 401
+
+            if len(roles) != 0 and AccountType[session["account_type"]] not in roles:
+                return jsonify({"message": "Unauthorized"}), 401
+
+            return handle_route(lambda: f(*args, **kwargs))
 
         return wrapped
 
@@ -66,14 +60,16 @@ def fetch_session():
     if not auth_header:
         return None
 
-    directive, token = auth_header.split(" ")
-    if directive != "Bearer":
-        return None
-
     try:
+        directive, token = auth_header.split(" ")
+        if directive != "Bearer":
+            return None
+
         decoded_token = jwt.decode(
             token, app.config["JWT_SECRET"], algorithms=["HS256"]
         )
         return decoded_token
     except jwt.DecodeError:
+        return None
+    except ValueError:
         return None
