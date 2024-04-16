@@ -103,12 +103,7 @@ def register():
         algorithm="HS256",
     )
     return (
-        jsonify(
-            {
-                "message": "User created successfully!",
-                "data": {"id": user_id, "password": password, "token": token},
-            }
-        ),
+        jsonify({"id": user_id, "password": password, "token": token}),
         201,
     )
 
@@ -165,12 +160,7 @@ def login():
         )
 
         return (
-            jsonify(
-                {
-                    "message": "User logged in successfully!",
-                    "data": {"token": token},
-                }
-            ),
+            jsonify({"token": token}),
             200,
         )
 
