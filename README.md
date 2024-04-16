@@ -91,4 +91,4 @@ python run.py
 
 ## Extras
 
-- When accessing endpoints that require authorization, ensure you have received a JWT token by logging in through the `POST /auth/login` endpoint. Copy the token and send a request to the protected route with the following header: `Authorization: <your_token_here>`
+- When accessing endpoints that require authorization, ensure you have received a JWT token by logging in through the `POST /auth/login` endpoint. Copy the token and send a request to the protected route with the following header: `Authorization: Bearer <your_token_here>`
