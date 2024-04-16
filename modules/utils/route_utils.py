@@ -39,30 +39,41 @@ def protected_route(roles: list[AccountType] = []):
                         500,
                     )
 
-                auth_header = request.headers.get("Authorization")
-                if not auth_header:
+                session = fetch_session()
+                if not session:
                     return jsonify({"message": "Unauthorized"}), 401
-
-                directive, token = auth_header.split(" ")
-                if directive != "Bearer":
-                    return jsonify({"message": "Unauthorized"}), 401
-
-                decoded_token = jwt.decode(
-                    token, app.config["JWT_SECRET"], algorithms=["HS256"]
-                )
 
                 if (
                     len(roles) != 0
-                    and AccountType[decoded_token["account_type"]] not in roles
+                    and AccountType[session["account_type"]] not in roles
                 ):
                     return jsonify({"message": "Unauthorized"}), 401
 
                 return handle_route(lambda: f(*args, **kwargs))
-            except jwt.DecodeError:
-                return jsonify({"message": "Unauthorized"}), 401
             except ValueError:
                 return jsonify({"message": "Unauthorized"}), 401
 
         return wrapped
 
     return decorator
+
+
+def fetch_session():
+    if not app or not request:
+        return None
+
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        return None
+
+    directive, token = auth_header.split(" ")
+    if directive != "Bearer":
+        return None
+
+    try:
+        decoded_token = jwt.decode(
+            token, app.config["JWT_SECRET"], algorithms=["HS256"]
+        )
+        return decoded_token
+    except jwt.DecodeError:
+        return None
