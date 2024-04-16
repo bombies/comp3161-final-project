@@ -38,13 +38,15 @@ CREATE TABLE Course (
     FOREIGN KEY (lecturer_id) REFERENCES LecturerDetails(lecturer_id)
 );
 
--- Sections table
+-- Sections table 
 CREATE TABLE Sections (
     section_id INT AUTO_INCREMENT PRIMARY KEY,
-    section_name VARCHAR(255) NOT NULL
+    section_name VARCHAR(255) NOT NULL,
+    course_code VARCHAR(10),
+    FOREIGN KEY (course_code) REFERENCES Course(course_code)
 );
 
--- SectionItems table
+-- SectionItems table 
 CREATE TABLE SectionItems (
     item_id INT AUTO_INCREMENT PRIMARY KEY,
     item_name VARCHAR(255) NOT NULL,
@@ -52,22 +54,35 @@ CREATE TABLE SectionItems (
     FOREIGN KEY (section_id) REFERENCES Sections(section_id)
 );
 
--- DiscussionForum table
+-- DiscussionForum table 
 CREATE TABLE DiscussionForum (
     forum_id INT AUTO_INCREMENT PRIMARY KEY,
     topic VARCHAR(255) NOT NULL,
     post_time DATETIME NOT NULL,
     creator INT,
-    FOREIGN KEY (creator) REFERENCES Account(account_id)
+    course_code VARCHAR(10),
+    FOREIGN KEY (creator) REFERENCES Account(account_id),
+    FOREIGN KEY (course_code) REFERENCES Course(course_code)
 );
 
--- DiscussionThread table
+-- DiscussionThread table 
 CREATE TABLE DiscussionThread (
     thread_id INT AUTO_INCREMENT PRIMARY KEY,
     replies INT NOT NULL,
     timeStamp DATETIME NOT NULL,
     forum_id INT,
     FOREIGN KEY (forum_id) REFERENCES DiscussionForum(forum_id)
+);
+
+-- DiscussionReply table 
+CREATE TABLE DiscussionReply (
+    reply_id INT AUTO_INCREMENT PRIMARY KEY,
+    thread_id INT,
+    user_id INT,
+    reply_time DATETIME,
+    reply_text TEXT,
+    FOREIGN KEY (thread_id) REFERENCES DiscussionThread(thread_id),
+    FOREIGN KEY (user_id) REFERENCES Account(account_id)
 );
 
 -- CalendarEvent table
@@ -81,8 +96,25 @@ CREATE TABLE CalendarEvent (
 
 -- Assignment table
 CREATE TABLE Assignment (
-    Assignment_id INT AUTO_INCREMENT PRIMARY KEY,
-    Assignment_grade DECIMAL(5, 2)
+    assignment_id INT AUTO_INCREMENT PRIMARY KEY,
+    course_code VARCHAR(10),
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    deadline DATETIME,
+    total_marks DECIMAL(5, 2),
+    FOREIGN KEY (course_code) REFERENCES Course(course_code)
+);
+
+-- AssignmentSubmission table 
+CREATE TABLE AssignmentSubmission (
+    submission_id INT AUTO_INCREMENT PRIMARY KEY,
+    assignment_id INT,
+    student_id INT,
+    submission_time DATETIME,
+    file_path VARCHAR(255),
+    grade DECIMAL(5, 2),
+    FOREIGN KEY (assignment_id) REFERENCES Assignment(assignment_id),
+    FOREIGN KEY (student_id) REFERENCES StudentDetails(student_id)
 );
 
 CREATE TABLE Enrollment (
