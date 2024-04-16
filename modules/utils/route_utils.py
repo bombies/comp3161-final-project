@@ -28,24 +28,25 @@ def protected_route(roles: list[AccountType] = []):
     def decorator(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
-            if not request:
-                return (
-                    jsonify(
-                        {
-                            "message": "The @protected_route decorator can't be used because it isn't for an endpoint function!"
-                        }
-                    ),
-                    500,
-                )
-            auth_header = request.headers.get("Authorization")
-            if not auth_header:
-                return jsonify({"message": "Unauthorized"}), 401
-
-            directive, token = auth_header.split(" ")
-            if directive != "Bearer":
-                return jsonify({"message": "Unauthorized"}), 401
-
             try:
+                if not request:
+                    return (
+                        jsonify(
+                            {
+                                "message": "The @protected_route decorator can't be used because it isn't for an endpoint function!"
+                            }
+                        ),
+                        500,
+                    )
+
+                auth_header = request.headers.get("Authorization")
+                if not auth_header:
+                    return jsonify({"message": "Unauthorized"}), 401
+
+                directive, token = auth_header.split(" ")
+                if directive != "Bearer":
+                    return jsonify({"message": "Unauthorized"}), 401
+
                 decoded_token = jwt.decode(
                     token, app.config["JWT_SECRET"], algorithms=["HS256"]
                 )
@@ -57,7 +58,9 @@ def protected_route(roles: list[AccountType] = []):
                     return jsonify({"message": "Unauthorized"}), 401
 
                 return handle_route(lambda: f(*args, **kwargs))
-            except jwt.DecodeError as e:
+            except jwt.DecodeError:
+                return jsonify({"message": "Unauthorized"}), 401
+            except ValueError:
                 return jsonify({"message": "Unauthorized"}), 401
 
         return wrapped

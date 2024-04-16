@@ -7,6 +7,7 @@ from bcrypt import hashpw, gensalt, checkpw
 import jwt
 
 from modules.utils.route_utils import handle_route
+from modules.utils.schema_utils import UnionField
 
 
 class RegisterSchema(Schema):
@@ -17,7 +18,7 @@ class RegisterSchema(Schema):
 
 
 class LoginSchema(Schema):
-    user_id = fields.Int(required=True)
+    user_id = UnionField(types=[str, int], required=True)
     password = fields.String(required=True)
 
 
@@ -80,7 +81,18 @@ def login():
         db_cursor = db.cursor()
 
         # Find user with the ID
-        db_cursor.execute("SELECT * FROM Account WHERE email = %s", (body["user_id"],))
+        query = ""
+
+        # If the user_id is an integer, search by account_id
+        if type(body["user_id"]) is int or type(body["user_id"]) is str and body["user_id"].isdigit():
+            query = "account_id = %s"
+        else:
+            query = "email = %s"
+
+        db_cursor.execute(
+            f"SELECT * FROM Account WHERE {query}",
+            (body["user_id"],),
+        )
         user = db_cursor.fetchone()
 
         # If the user does not exist, return an error.

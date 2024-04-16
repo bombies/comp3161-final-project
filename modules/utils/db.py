@@ -1,5 +1,8 @@
 import os
 import mysql.connector
+from bcrypt import hashpw, gensalt
+
+from modules.models.account import AccountType
 
 db = mysql.connector.connect(
     host=os.getenv("DATABASE_HOST") or "localhost",
@@ -10,3 +13,24 @@ db = mysql.connector.connect(
 )
 
 print("Database connected!" if db else "Database connection failed!")
+
+if db:
+    # Create the root user if it doesn't exist.
+    db_cursor = db.cursor()
+    db_cursor.execute("SELECT * FROM Account WHERE email = 'root'")
+    if not db_cursor.fetchone():
+        db_cursor.execute(
+            "INSERT INTO Account (email, password, account_type, name) VALUES (%s, %s, %s, %s)",
+            (
+                "root",
+                hashpw(os.getenv("MASTER_PASSWORD").encode("utf-8"), gensalt()).decode(
+                    "utf-8"
+                ),
+                AccountType.Admin.name,
+                "Root User",
+            ),
+        )
+        db.commit()
+        print("Root user created!")
+    else:
+        print("Root user already exists, skipping creation!")
