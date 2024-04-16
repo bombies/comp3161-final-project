@@ -1,6 +1,7 @@
 from faker import Faker
 import random
 from collections import defaultdict
+from bcrypt import hashpw, gensalt
 
 # Initialize Faker generator
 fake = Faker()
@@ -161,6 +162,7 @@ course_examples = list(set(course_examples))
 num_lecturers = 50
 num_students = 100000  # Total number of students
 accounts = []
+account_details = []
 
 
 # Helper function to generate unique contact numbers
@@ -182,11 +184,12 @@ for i in range(1, num_lecturers + 1):  # For lecturers
     unique_emails.add(email)  # Add the new unique email to the set
 
     dept = random.choice(list(department_courses.keys()))
+    password = fake.password()
     accounts.append(
         {
             "account_id": i,
             "email": email,
-            "password": fake.password(),
+            "password": hashpw(password.encode("utf-8"), gensalt()).decode("utf-8"),
             "account_type": "Lecturer",
             "contact_info": unique_contacts[
                 i - 1
@@ -196,17 +199,25 @@ for i in range(1, num_lecturers + 1):  # For lecturers
         }
     )
 
+    account_details.append(
+        {
+            "account_id": i,
+            "password": password,
+        }
+    )
+
 # Adjusted student account creation with GPA
 for i in range(num_lecturers + 1, num_lecturers + num_students + 1):
     email = fake.unique.email()
     major = random.choice(list(department_courses.keys()))
     # Generate a random GPA from 0 to 4.33, rounded to 2 decimal places
     gpa = round(random.uniform(0, 4.33), 2)
+    password = fake.password()
     accounts.append(
         {
             "account_id": i,
             "email": email,
-            "password": fake.password(),
+            "password": hashpw(password.encode("utf-8"), gensalt()).decode("utf-8"),
             "account_type": "Student",
             "contact_info": unique_contacts[
                 i - 1
@@ -214,6 +225,13 @@ for i in range(num_lecturers + 1, num_lecturers + num_students + 1):
             "name": fake.name(),
             "major": major,
             "gpa": gpa,  # Include GPA in the account details
+        }
+    )
+
+    account_details.append(
+        {
+            "account_id": i,
+            "password": password,
         }
     )
 
@@ -342,3 +360,9 @@ with open("insert_queries.sql", "w") as f:
 
 
 print("SQL insert queries generated and saved to 'insert_queries.sql'")
+
+with open("account_details.txt", "w") as f:
+    for acc in account_details:
+        f.write(f"{acc['account_id']}: {acc['password']}\n")
+
+print("Account details saved to 'account_details.txt'")
