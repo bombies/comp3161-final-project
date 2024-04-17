@@ -29,7 +29,7 @@ def create_calendar_event():
 def get_course_calendar_events():
     # Retrieve all calendar events
     db_cursor = db.cursor()
-    db_cursor.execute("SELECT * FROM CalendarEvent WHERE course_id = %s", (course_id,))
+    db_cursor.execute("SELECT * FROM CalendarEvent WHERE course_code = %s", (course_code,))
     events = db_cursor.fetchall()
     if not events:
         return jsonify({"message": "No calendar events found for this course"}), 404
