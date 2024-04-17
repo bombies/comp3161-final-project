@@ -25,11 +25,11 @@ def create_calendar_event():
         db.rollback()
         return jsonify({"message": f"Failed to create calendar event: {str(e)}"}), 500
 
-@app.route("/calendar", methods=["GET"])
+@app.route("/calendar/events/course/<string:course_id>", methods=["GET"])
 def get_course_calendar_events():
     # Retrieve all calendar events
     db_cursor = db.cursor()
-    db_cursor.execute("SELECT * FROM CalendarEvent WHERE course_code = %s", (course_code,))
+    db_cursor.execute("SELECT * FROM CalendarEvent WHERE course_id = %s", (course_id,))
     events = db_cursor.fetchall()
     if not events:
         return jsonify({"message": "No calendar events found for this course"}), 404
@@ -37,7 +37,7 @@ def get_course_calendar_events():
     return jsonify(events), 200
     # Return data as per requirements
 
-@app.route("/calendar", methods=["GET"])
+@app.route("/calendar/events/student/<int:student_id>/date/<date:date>", methods=["GET"])
 def get_student_calendar_events(student_id, date):
     db_cursor = db.cursor()
     db_cursor.execute("SELECT * FROM CalendarEvent WHERE date = %s AND course_id IN (SELECT course_id FROM Enrollment WHERE student_id = %s)", (date, student_id))
