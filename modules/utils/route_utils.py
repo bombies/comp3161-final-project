@@ -28,28 +28,36 @@ def protected_route(roles: list[AccountType] = []):
     def decorator(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
-            if not request:
-                return (
-                    jsonify(
-                        {
-                            "message": "The @protected_route decorator can't be used because it isn't for an endpoint function!"
-                        }
-                    ),
-                    500,
-                )
-
-            session = fetch_session()
-            if not session:
-                return jsonify({"message": "Unauthorized"}), 401
-
-            if len(roles) != 0 and AccountType[session["account_type"]] not in roles:
-                return jsonify({"message": "Unauthorized"}), 401
+            auth_result = authenticate(roles)
+            if auth_result:
+                return auth_result
 
             return handle_route(lambda: f(*args, **kwargs))
 
         return wrapped
 
     return decorator
+
+
+def authenticate(roles: list[AccountType]):
+    if not request:
+        return (
+            jsonify(
+                {
+                    "message": "The authenticate function can't be used because it isn't in an endpoint function!"
+                }
+            ),
+            500,
+        )
+
+    session = fetch_session()
+    if not session:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    if len(roles) != 0 and AccountType[session["account_type"]] not in roles:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    return None
 
 
 def fetch_session():

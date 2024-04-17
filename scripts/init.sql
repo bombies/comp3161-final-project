@@ -107,14 +107,14 @@ CREATE TABLE Assignment (
 
 -- AssignmentSubmission table 
 CREATE TABLE AssignmentSubmission (
-    submission_id INT AUTO_INCREMENT PRIMARY KEY,
     assignment_id INT,
     student_id INT,
-    submission_time DATETIME,
+    submission_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     file_path VARCHAR(255),
     grade DECIMAL(5, 2),
     FOREIGN KEY (assignment_id) REFERENCES Assignment(assignment_id),
-    FOREIGN KEY (student_id) REFERENCES StudentDetails(student_id)
+    FOREIGN KEY (student_id) REFERENCES StudentDetails(student_id),
+    PRIMARY KEY (assignment_id, student_id)
 );
 
 CREATE TABLE Enrollment (
