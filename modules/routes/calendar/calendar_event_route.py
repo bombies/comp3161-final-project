@@ -26,7 +26,7 @@ def create_calendar_event():
         return jsonify({"message": f"Failed to create calendar event: {str(e)}"}), 500
 
 @app.route("/calendar/events/course/<string:course_id>", methods=["GET"])
-def get_course_calendar_events():
+def get_course_calendar_events(course_id):
     # Retrieve all calendar events
     db_cursor = db.cursor()
     db_cursor.execute("SELECT * FROM CalendarEvent WHERE course_id = %s", (course_id,))
