@@ -3,21 +3,22 @@ from app import app
 from modules.models.account import AccountType
 from modules.routes.calendar.calendar_event_schema import (
     CalendarEventSchema,
+    DateRangeSchema,
 
 )
 from modules.utils.db import db
 from modules.utils.route_utils import authenticate, fetch_session, protected_route
 
-@app.route("/calendar", methods=["POST"])
+@app.route("/calendar/<str:course_id>", methods=["POST"])
 @protected_route(roles=[AccountType.Admin, AccountType.Lecturer])
-def create_calendar_event():
+def create_calendar_event(course_id: str):
     body = CalendarEventSchema().load(request.get_json(force=True))
 
     db_cursor = db.cursor()
     try:
         db_cursor.execute(
             "INSERT INTO CalendarEvent (course_id, date, event_name, event_no) VALUES (%s, %s, %s, %s)",
-            (body["course_id"], body["date"], body["event_name"], body["event_no"]),
+            (body["course_id"], body["date"], body["event_name"]),
         )
         db.commit()
         return jsonify({"message": "Calendar event created successfully"}), 201
@@ -37,14 +38,40 @@ def get_course_calendar_events(course_id):
     return jsonify(events), 200
     # Return data as per requirements
 
-@app.route("/calendar/events/student/<int:student_id>/date/<date:date>", methods=["GET"])
-def get_student_calendar_events(student_id, date):
+@app.route("/calendar/events/student/<int:student_id>", methods=["GET"])
+def get_student_calendar_events(student_id):
+    # Parse the request body to get the start date and end date
+    request_data = request.get_json(force=True)
+    date_range = DateRangeSchema().load(request_data)
+
+    # Extract start date and end date from the request data
+    start_date = date_range.get("start_date")
+    end_date = date_range.get("end_date")
+
+    # Construct the query based on the provided start and end dates
+    query = "SELECT * FROM CalendarEvent WHERE course_id IN (SELECT course_id FROM Enrollment WHERE student_id = %s)"
+    params = [student_id]
+
+    if start_date is not None and end_date is not None:
+        query += " AND date BETWEEN %s AND %s"
+        params.extend([start_date, end_date])
+    elif start_date is not None:
+        query += " AND date >= %s"
+        params.append(start_date)
+    elif end_date is not None:
+        query += " AND date <= %s"
+        params.append(end_date)
+
+    # Retrieve calendar events for the student based on the constructed query
     db_cursor = db.cursor()
-    db_cursor.execute("SELECT * FROM CalendarEvent WHERE date = %s AND course_id IN (SELECT course_id FROM Enrollment WHERE student_id = %s)", (date, student_id))
+    db_cursor.execute(query, params)
     events = db_cursor.fetchall()
+
     if not events:
-        return jsonify({"message": "No calendar events found for this student on this date"}), 404
+        return jsonify({"message": "No calendar events found for this student within the specified date range"}), 404
+
     # Convert the events data into JSON format and return
     return jsonify(events), 200
+
 
 
