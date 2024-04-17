@@ -36,6 +36,7 @@ from modules.utils.auth_utils import fetch_session
 def create_course_forum(course_code):
     # Check if the user is a student
     session = fetch_session()
+    db_cursor = db.cursor(dictionary=True)
     if session["account_type"] == AccountType.Student.name:
         return jsonify({"message": "Students are not allowed to create forums"}), 403
 
@@ -67,9 +68,11 @@ def create_course_forum(course_code):
 
 
 @app.route("/threads/forum/<int:forum_id>", methods=["GET", "POST"])
+@protected_route(roles=[AccountType.Admin, AccountType.Lecturer])
 def handle_forum_threads(forum_id):
     # Check if the user is a student
     session = fetch_session()
+    db_cursor = db.cursor(dictionary=True)
     if session["account_type"] == AccountType.Student.name:
         return jsonify({"message": "Students are not allowed to create forums"}), 403
 
@@ -83,7 +86,6 @@ def handle_forum_threads(forum_id):
             return jsonify({"message": "You can only view your own courses!"}), 403
 
     # Proceed with retrieving discussion threads for the forum
-    db_cursor = db.cursor()
     db_cursor.execute("SELECT * FROM DiscussionThread WHERE forum_id = %s", (forum_id,))
     threads = db_cursor.fetchall()
     if not threads:
@@ -96,6 +98,7 @@ def handle_forum_threads(forum_id):
 def add_thread_to_forum(forum_id):
     # Check if the user is a student
     session = fetch_session()
+    db_cursor = db.cursor(dictionary=True)
     if session["account_type"] == AccountType.Student.name:
         return jsonify({"message": "Students are not allowed to create forums"}), 403
 
@@ -112,7 +115,6 @@ def add_thread_to_forum(forum_id):
     body = NewDiscussionThreadSchema().load(request.get_json(force=True))
     user_id = session["user_id"]  # Assuming user_id is obtained from JWT token
 
-    db_cursor = db.cursor()
     try:
         db_cursor.execute(
             "INSERT INTO DiscussionThread (title, post, forum_id, user_id) VALUES (%s, %s, %s, %s)",
