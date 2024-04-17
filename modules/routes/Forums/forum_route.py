@@ -55,7 +55,7 @@ def get_forum_threads(forum_id):
 def add_thread_to_forum(forum_id):
     body = NewDiscussionThreadSchema().load(request.get_json(force=True))
     # Assuming user_id is obtained from JWT token
-    user_id = get_user_id_from_token(request.headers.get("Authorization"))
+    user_id = fetch_session(request.headers.get("Authorization"))
 
     db_cursor = db.cursor()
     try:
@@ -75,7 +75,7 @@ def add_thread_to_forum(forum_id):
 def add_reply_to_thread(thread_id):
     body = NewDiscussionReplySchema().load(request.get_json(force=True))
     # Assuming user_id is obtained from JWT token
-    user_id = get_user_id_from_token(request.headers.get("Authorization"))
+    user_id = fetch_session(request.headers.get("Authorization"))
 
     db_cursor = db.cursor()
     try:
