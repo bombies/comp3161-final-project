@@ -44,9 +44,9 @@ def create_course_forum(course_code):
     if session["account_type"] == AccountType.Lecturer.name:
         # Check if the lecturer teaches the specified course
         lecture_details = db_cursor.execute(
-            "SELECT * FROM LecturerDetails WHERE account_id = %s", (session["sub"],)
+            "SELECT * FROM Course WHERE lecturer_id = %s", (session["sub"],)
         ).fetchone()
-        if lecturer_id != lecture_details["lecturer_id"]:
+        if course_code != lecture_details["course_code"]:
             return jsonify({"message": "You can only view your own courses!"}), 403
 
 
@@ -69,7 +69,7 @@ def create_course_forum(course_code):
 
 @app.route("/threads/forum/<int:forum_id>", methods=["GET", "POST"])
 @protected_route(roles=[AccountType.Admin, AccountType.Lecturer])
-def handle_forum_threads(forum_id):
+def handle_forum_threads(forum_id, course_code):
     # Check if the user is a student
     session = fetch_session()
     db_cursor = db.cursor(dictionary=True)
@@ -80,9 +80,9 @@ def handle_forum_threads(forum_id):
     if session["account_type"] == AccountType.Lecturer.name:
         # Check if the lecturer teaches the specified course
         lecture_details = db_cursor.execute(
-            "SELECT * FROM LecturerDetails WHERE account_id = %s", (session["sub"],)
+            "SELECT * FROM Course WHERE lecturer_id = %s", (session["sub"],)
         ).fetchone()
-        if lecturer_id != lecture_details["lecturer_id"]:
+        if course_code != lecture_details["course_code"]:
             return jsonify({"message": "You can only view your own courses!"}), 403
 
     # Proceed with retrieving discussion threads for the forum
@@ -95,7 +95,7 @@ def handle_forum_threads(forum_id):
 
 @app.route("/threads/forum/<int:forum_id>", methods=["POST"])
 @protected_route(roles=[AccountType.Admin, AccountType.Lecturer, AccountType.Student])
-def add_thread_to_forum(forum_id):
+def add_thread_to_forum(forum_id, course_code):
     # Check if the user is a student
     session = fetch_session()
     db_cursor = db.cursor(dictionary=True)
@@ -106,11 +106,11 @@ def add_thread_to_forum(forum_id):
     if session["account_type"] == AccountType.Lecturer.name:
         # Check if the lecturer teaches the specified course
         lecture_details = db_cursor.execute(
-            "SELECT * FROM LecturerDetails WHERE account_id = %s", (session["sub"],)
+            "SELECT * FROM Course WHERE lecturer_id = %s", (session["sub"],)
         ).fetchone()
-        if lecturer_id != lecture_details["lecturer_id"]:
+        if course_code != lecture_details["course_code"]:
             return jsonify({"message": "You can only view your own courses!"}), 403
-
+            
     # Proceed with adding the discussion thread to the forum
     body = NewDiscussionThreadSchema().load(request.get_json(force=True))
     user_id = session["user_id"]  # Assuming user_id is obtained from JWT token
