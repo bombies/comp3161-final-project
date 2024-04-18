@@ -32,8 +32,8 @@ def create_course():
 
     # Check if the lecturer exists.
     db_cursor.execute(
-        "SELECT * FROM Account WHERE id = %s AND account_type = %s",
-        (body["lecturer_id"], AccountType.Lecturer.value),
+        "SELECT * FROM LecturerDetails WHERE lecturer_id = %s",
+        (body["lecturer_id"],),
     )
     if not db_cursor.fetchone():
         return (
@@ -53,15 +53,15 @@ def create_course():
     )
 
     db.commit()
-    course_id = db_cursor.lastrowid
-    return jsonify({"course_id": course_id}), 201
+    course_code = db_cursor.lastrowid
+    return jsonify({"course_code": course_code}), 201
 
 
 @app.route("/courses/<string:course_code>", methods=["PATCH"])
 @protected_route(roles=[AccountType.Admin])
 def update_course(course_code: str):
     body = UpdateCourseSchema().load(request.get_json(force=True))
-    db_cursor = db.cursor()
+    db_cursor = db.cursor(dictionary=True)
 
     # Check if the course exists.
     db_cursor.execute("SELECT * FROM Course WHERE course_code = %s", (course_code,))
@@ -96,16 +96,38 @@ def update_course(course_code: str):
     )
 
     db.commit()
-    return jsonify({"message": "Course updated!"}), 200
+
+    # Fetch current course details
+    db_cursor.execute("SELECT * FROM Course WHERE course_code = %s", (course_code,))
+    course = db_cursor.fetchone()
+
+    return jsonify(course), 200
 
 
 @app.route("/courses", methods=["GET"])
 @protected_route()
-def get_course():
-    db_cursor = db.cursor()
+def get_courses():
+    db_cursor = db.cursor(dictionary=True)
     db_cursor.execute("SELECT * FROM Course")
     courses = db_cursor.fetchall()
     return jsonify(courses), 200
+
+
+@app.route("/courses/<string:course_code>", methods=["GET"])
+@protected_route()
+def get_course(course_code: str):
+    db_cursor = db.cursor(dictionary=True)
+
+    # Check if the course exists.
+    db_cursor.execute("SELECT * FROM Course WHERE course_code = %s", (course_code,))
+    course = db_cursor.fetchone()
+    if not course:
+        return (
+            jsonify({"message": "There is no course with that course code!"}),
+            404,
+        )
+
+    return jsonify(course), 200
 
 
 @app.route("/courses/student/<int:student_id>", methods=["GET"])
@@ -115,9 +137,7 @@ def get_courses_for_student(student_id: int):
     db_cursor = db.cursor(dictionary=True)
 
     if session["account_type"] == AccountType.Student.name:
-        student_details = db_cursor.execute(
-            "SELECT * FROM StudentDetails WHERE account_id = %s", (session["sub"],)
-        ).fetchone()
+        student_details = _fetch_student_details_from_session(session)
 
         if student_id != student_details["student_id"]:
             return jsonify({"message": "You can only view your own courses!"}), 403
@@ -136,7 +156,7 @@ def get_courses_for_student(student_id: int):
 @app.route("/courses/lecturer/<int:lecturer_id>", methods=["GET"])
 @protected_route()
 def get_courses_for_lecturer(lecturer_id: int):
-    db_cursor = db.cursor()
+    db_cursor = db.cursor(dictionary=True)
     db_cursor.execute("SELECT * FROM Course WHERE lecturer_id = %s", (lecturer_id,))
 
     courses = db_cursor.fetchall()
@@ -152,9 +172,7 @@ def register_for_course(course_code: str):
     db_cursor = db.cursor(dictionary=True)
 
     # Fetch StudentDetails record
-    student_details = db_cursor.execute(
-        "SELECT * FROM StudentDetails WHERE account_id = %s", (session["sub"],)
-    ).fetchone()
+    student_details = _fetch_student_details_from_session(session)
 
     # Check if the course exists.
     db_cursor.execute("SELECT * FROM Course WHERE course_code = %s", (course_code,))
@@ -183,19 +201,26 @@ def register_for_course(course_code: str):
     )
 
     db.commit()
-    return jsonify({"message": "You have been registered for the course!"}), 201
+    return (
+        jsonify(
+            {
+                "message": "You have been registered for the course!",
+                "course_code": course_code,
+                "student_id": student_details["student_id"],
+            }
+        ),
+        201,
+    )
 
 
-@app.route("/courses/deregister/<string:course_code>", methods=["DELETE"])
+@app.route("/courses/unregister/<string:course_code>", methods=["DELETE"])
 @protected_route([AccountType.Student])
 def deregister_from_course(course_code: str):
     session = fetch_session()
     db_cursor = db.cursor(dictionary=True)
 
     # Fetch StudentDetails record
-    student_details = db_cursor.execute(
-        "SELECT * FROM StudentDetails WHERE account_id = %s", (session["sub"],)
-    ).fetchone()
+    student_details = _fetch_student_details_from_session(session)
 
     # Check if the course exists.
     db_cursor.execute("SELECT * FROM Course WHERE course_code = %s", (course_code,))
@@ -224,7 +249,16 @@ def deregister_from_course(course_code: str):
     )
 
     db.commit()
-    return jsonify({"message": "You have been deregistered from the course!"}), 200
+    return (
+        jsonify(
+            {
+                "message": "You have been deregistered from the course!",
+                "student_id": student_details["student_id"],
+                **course,
+            }
+        ),
+        200,
+    )
 
 
 @app.route("/courses/<string:course_code>/members", methods=["GET"])
@@ -234,9 +268,8 @@ def get_course_members(course_code: str):
     db_cursor = db.cursor(dictionary=True)
 
     if session["account_type"] == AccountType.Student.name:
-        student_details = db_cursor.execute(
-            "SELECT * FROM StudentDetails WHERE account_id = %s", (session["sub"],)
-        ).fetchone()
+        # Fetch StudentDetails record
+        student_details = _fetch_student_details_from_session(session)
 
         db_cursor.execute(
             "SELECT * FROM Enrollment WHERE student_id = %s AND course_code = %s",
@@ -286,7 +319,8 @@ def create_assignment(course_code: str):
         )
 
     # Check if the lecturer is the owner of the course.
-    if course["lecturer_id"] != fetch_session()["sub"]:
+    lecturer_details = _fetch_lecturer_details_from_session(fetch_session())
+    if course["lecturer_id"] != lecturer_details["lecturer_id"]:
         return (
             jsonify({"message": "You can only create assignments for your courses!"}),
             403,
@@ -324,9 +358,8 @@ def get_assignments(course_code: str):
     # If the user is a student, check if they are enrolled in the course.
     session = fetch_session()
     if session["account_type"] == AccountType.Student.name:
-        student_details = db_cursor.execute(
-            "SELECT * FROM StudentDetails WHERE account_id = %s", (session["sub"],)
-        ).fetchone()
+        # Fetch StudentDetails record
+        student_details = _fetch_student_details_from_session(session)
 
         db_cursor.execute(
             "SELECT * FROM Enrollment WHERE student_id = %s AND course_code = %s",
@@ -356,9 +389,7 @@ def submit_assignment(assignment_id: int):
     db_cursor = db.cursor(dictionary=True)
 
     # Fetch StudentDetails record
-    student_details = db_cursor.execute(
-        "SELECT * FROM StudentDetails WHERE account_id = %s", (session["sub"],)
-    ).fetchone()
+    student_details = _fetch_student_details_from_session(session)
 
     # Check if the assignment exists.
     db_cursor.execute("SELECT * FROM Assignment WHERE id = %s", (assignment_id,))
@@ -428,10 +459,8 @@ def get_submissions_for_assignment(assignment_id: int):
     # Check if the user is a lecturer and if they teach the course associated with the assignment.
     session = fetch_session()
     if session["account_type"] == AccountType.Lecturer.name:
-        # Fetch lecturer details
-        lecturer_details = db_cursor.execute(
-            "SELECT * FROM LecturerDetails WHERE account_id = %s", (session["sub"],)
-        ).fetchone()
+        # Fetch LecturerDetails record
+        lecturer_details = _fetch_lecturer_details_from_session(session)
 
         db_cursor.execute(
             "SELECT * FROM Course WHERE course_code = %s AND lecturer_id = %s",
@@ -479,9 +508,7 @@ def get_specific_submission(assignment_id: int, submission_id: int):
     session = fetch_session()
     if session["account_type"] == AccountType.Lecturer.name:
         # Fetch lecturer details
-        lecturer_details = db_cursor.execute(
-            "SELECT * FROM LecturerDetails WHERE account_id = %s", (session["sub"],)
-        ).fetchone()
+        lecturer_details = _fetch_lecturer_details_from_session(session)
 
         db_cursor.execute(
             "SELECT * FROM Course WHERE course_code = %s AND lecturer_id = %s",
@@ -547,9 +574,7 @@ def grade_assignment(assignment_id: int, submission_id: int):
     session = fetch_session()
     if session["account_type"] == AccountType.Lecturer.name:
         # Fetch lecturer details
-        lecturer_details = db_cursor.execute(
-            "SELECT * FROM LecturerDetails WHERE account_id = %s", (session["sub"],)
-        ).fetchone()
+        lecturer_details = _fetch_lecturer_details_from_session
 
         db_cursor.execute(
             "SELECT * FROM Course WHERE course_code = %s AND lecturer_id = %s",
@@ -639,9 +664,7 @@ def create_course_section(course_code: str):
     # Check if the user is a lecturer and if they teach the course
     if session["account_type"] == AccountType.Lecturer.name:
         # Fetch lecturer details
-        lecturer_details = db_cursor.execute(
-            "SELECT * FROM LecturerDetails WHERE account_id = %s", (session["sub"],)
-        ).fetchone()
+        lecturer_details = _fetch_lecturer_details_from_session(session)
 
         if course["lecturer_id"] != lecturer_details["lecturer_id"]:
             return (
@@ -718,9 +741,7 @@ def create_course_section_item(course_code: str, section_id: int):
 
     # If they are a lecturer, check if they teach the course
     db_cursor = db.cursor(dictionary=True)
-    lecturer_details = db_cursor.execute(
-        "SELECT * FROM LecturerDetails WHERE account_id = %s", (session["sub"],)
-    ).fetchone()
+    lecturer_details = _fetch_lecturer_details_from_session(session)
 
     db_cursor.execute(
         "SELECT * FROM Course WHERE course_code = %s AND lecturer_id = %s",
@@ -892,14 +913,74 @@ def download_course_section_item_details(
     return jsonify(section), 200
 
 
+def _fetch_student_details(account_id: str, account_type: str | None = None):
+    db_cursor = db.cursor(dictionary=True)
+
+    if account_type and account_type != AccountType.Student.name:
+        return None
+    elif not account_type:
+        # Fetch account from database and check account type
+        db_cursor.execute(
+            "SELECT * FROM Account WHERE id = %s AND account_type = %s",
+            (account_id, AccountType.Student.name),
+        )
+        if not db_cursor.fetchone():
+            return None
+
+    db_cursor.execute(
+        "SELECT * FROM StudentDetails WHERE account_id = %s", (account_id,)
+    )
+    return db_cursor.fetchone()
+
+
+def _fetch_student_details_from_session(session):
+    if session["account_type"] != AccountType.Student.name:
+        return None
+
+    db_cursor = db.cursor(dictionary=True)
+    db_cursor.execute(
+        "SELECT * FROM StudentDetails WHERE account_id = %s", (session["sub"],)
+    )
+    return db_cursor.fetchone()
+
+
+def _fetch_lecturer_details(account_id: str, account_type: str | None = None):
+    db_cursor = db.cursor(dictionary=True)
+
+    if account_type and account_type != AccountType.Lecturer.name:
+        return None
+    elif not account_type:
+        # Fetch account from database and check account type
+        db_cursor.execute(
+            "SELECT * FROM Account WHERE id = %s AND account_type = %s",
+            (account_id, AccountType.Lecturer.name),
+        )
+        if not db_cursor.fetchone():
+            return None
+
+    db_cursor.execute(
+        "SELECT * FROM LecturerDetails WHERE account_id = %s", (account_id,)
+    )
+    return db_cursor.fetchone()
+
+
+def _fetch_lecturer_details_from_session(session):
+    if session["account_type"] != AccountType.Lecturer.name:
+        return None
+
+    db_cursor = db.cursor(dictionary=True)
+    db_cursor.execute(
+        "SELECT * FROM LecturerDetails WHERE account_id = %s", (session["sub"],)
+    )
+    return db_cursor.fetchone()
+
+
 def _check_course_visibility(session, course_code, err_msgs={}):
     # Check if the user is a student and if they are enrolled in the course. If the user is a lecturer, check if they teach the course.
     session = fetch_session()
     if session["account_type"] == AccountType.Student.name:
         db_cursor = db.cursor(dictionary=True)
-        student_details = db_cursor.execute(
-            "SELECT * FROM StudentDetails WHERE account_id = %s", (session["sub"],)
-        ).fetchone()
+        student_details = _fetch_student_details_from_session(session)
 
         db_cursor.execute(
             "SELECT * FROM Enrollment WHERE student_id = %s AND course_code = %s",
@@ -917,10 +998,7 @@ def _check_course_visibility(session, course_code, err_msgs={}):
             )
     elif session["account_type"] == AccountType.Lecturer.name:
         db_cursor = db.cursor(dictionary=True)
-        # Fetch lecturer details
-        lecturer_details = db_cursor.execute(
-            "SELECT * FROM LecturerDetails WHERE account_id = %s", (session["sub"],)
-        ).fetchone()
+        lecturer_details = _fetch_lecturer_details_from_session(session)
 
         db_cursor.execute(
             "SELECT * FROM Course WHERE course_code = %s AND lecturer_id = %s",

@@ -68,7 +68,7 @@ def register():
         "INSERT INTO Account (email, password, name, contact_info, account_type) VALUES (%s, %s, %s, %s, %s)",
         (
             body["email"],
-            hashpw(password.encode("utf-8"), gensalt()).decode("utf-8"),
+            hash_password(password),
             body["name"],
             body.get("contact_info"),
             AccountType.Student.name,
@@ -165,3 +165,7 @@ def login():
         )
 
     return handle_route(handler=handler)
+
+
+def hash_password(password: str):
+    return hashpw(password.encode("utf-8"), gensalt()).decode("utf-8")

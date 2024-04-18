@@ -17,7 +17,7 @@ CREATE TABLE LecturerDetails (
     lecturer_id INT AUTO_INCREMENT PRIMARY KEY,
     account_id INT,
     department VARCHAR(255),
-    FOREIGN KEY (account_id) REFERENCES Account(account_id)
+    FOREIGN KEY (account_id) REFERENCES Account(account_id) ON DELETE CASCADE
 );
 
 -- Details specific to Students
@@ -26,7 +26,7 @@ CREATE TABLE StudentDetails (
     account_id INT,
     gpa DECIMAL(3, 2),
     major VARCHAR(255),
-    FOREIGN KEY (account_id) REFERENCES Account(account_id)
+    FOREIGN KEY (account_id) REFERENCES Account(account_id) ON DELETE CASCADE
 );
 
 -- Courses taught by lecturers
@@ -35,7 +35,9 @@ CREATE TABLE Course (
     course_name VARCHAR(255) NOT NULL,
     lecturer_id INT,
     semester INT,
-    FOREIGN KEY (lecturer_id) REFERENCES LecturerDetails(lecturer_id)
+    FOREIGN KEY (lecturer_id) REFERENCES LecturerDetails(lecturer_id) ON DELETE
+    SET
+        NULL
 );
 
 -- Sections table 
@@ -43,7 +45,7 @@ CREATE TABLE Sections (
     section_id INT AUTO_INCREMENT PRIMARY KEY,
     section_name VARCHAR(255) NOT NULL,
     course_code VARCHAR(10),
-    FOREIGN KEY (course_code) REFERENCES Course(course_code)
+    FOREIGN KEY (course_code) REFERENCES Course(course_code) ON DELETE CASCADE
 );
 
 -- SectionItems table 
@@ -59,7 +61,7 @@ CREATE TABLE SectionItems (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     -- References
-    FOREIGN KEY (section_id) REFERENCES Sections(section_id)
+    FOREIGN KEY (section_id) REFERENCES Sections(section_id) ON DELETE CASCADE
 );
 
 -- DiscussionForum table 
@@ -70,7 +72,7 @@ CREATE TABLE DiscussionForum (
     creator INT,
     course_code VARCHAR(10),
     FOREIGN KEY (creator) REFERENCES Account(account_id),
-    FOREIGN KEY (course_code) REFERENCES Course(course_code)
+    FOREIGN KEY (course_code) REFERENCES Course(course_code) ON DELETE CASCADE
 );
 
 -- DiscussionThread table 
@@ -79,7 +81,7 @@ CREATE TABLE DiscussionThread (
     replies INT NOT NULL,
     timeStamp DATETIME NOT NULL,
     forum_id INT,
-    FOREIGN KEY (forum_id) REFERENCES DiscussionForum(forum_id)
+    FOREIGN KEY (forum_id) REFERENCES DiscussionForum(forum_id) ON DELETE CASCADE
 );
 
 -- DiscussionReply table 
@@ -89,8 +91,8 @@ CREATE TABLE DiscussionReply (
     user_id INT,
     reply_time DATETIME,
     reply_text TEXT,
-    FOREIGN KEY (thread_id) REFERENCES DiscussionThread(thread_id),
-    FOREIGN KEY (user_id) REFERENCES Account(account_id)
+    FOREIGN KEY (thread_id) REFERENCES DiscussionThread(thread_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES Account(account_id) ON DELETE CASCADE
 );
 
 -- CalendarEvent table
@@ -99,7 +101,7 @@ CREATE TABLE CalendarEvent (
     date DATE NOT NULL,
     event_name VARCHAR(255) NOT NULL,
     event_no INT AUTO_INCREMENT PRIMARY KEY,
-    FOREIGN KEY (course_id) REFERENCES Course(course_code)
+    FOREIGN KEY (course_id) REFERENCES Course(course_code) ON DELETE CASCADE
 );
 
 -- Assignment table
@@ -110,7 +112,7 @@ CREATE TABLE Assignment (
     description TEXT,
     deadline DATETIME,
     total_marks DECIMAL(5, 2),
-    FOREIGN KEY (course_code) REFERENCES Course(course_code)
+    FOREIGN KEY (course_code) REFERENCES Course(course_code) ON DELETE CASCADE
 );
 
 -- AssignmentSubmission table 
@@ -121,8 +123,8 @@ CREATE TABLE AssignmentSubmission (
     submission_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     file_path VARCHAR(255),
     grade DECIMAL(5, 2),
-    FOREIGN KEY (assignment_id) REFERENCES Assignment(assignment_id),
-    FOREIGN KEY (student_id) REFERENCES StudentDetails(student_id),
+    FOREIGN KEY (assignment_id) REFERENCES Assignment(assignment_id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES StudentDetails(student_id) ON DELETE CASCADE,
     UNIQUE (assignment_id, student_id)
 );
 
@@ -130,6 +132,6 @@ CREATE TABLE Enrollment (
     student_id INT,
     course_code VARCHAR(10),
     PRIMARY KEY (student_id, course_code),
-    FOREIGN KEY (student_id) REFERENCES StudentDetails(student_id),
-    FOREIGN KEY (course_code) REFERENCES Course(course_code)
+    FOREIGN KEY (student_id) REFERENCES StudentDetails(student_id) ON DELETE CASCADE,
+    FOREIGN KEY (course_code) REFERENCES Course(course_code) ON DELETE CASCADE
 );

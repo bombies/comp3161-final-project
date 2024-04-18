@@ -7,3 +7,4 @@ pytest-playwright
 mysql-connector-python
 python-dotenv
 marshmallow
+python-dateutil

@@ -15,7 +15,6 @@ class UpdateCourseSchema(Schema):
 
 
 class CreateAssignmentSchema(Schema):
-    course_code = fields.Str(required=True)
     title = fields.Str(required=True)
     description = fields.Str(required=False)
     deadline = fields.DateTime(required=True)
