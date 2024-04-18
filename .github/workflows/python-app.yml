@@ -37,7 +37,7 @@ jobs:
                   done
             - name: Run init.sql script
               run: |
-                  mysql -u user < scripts/init.sql
+                  mysql -u user --password="password" < scripts/init.sql
             - name: Set up Python 3.10
               uses: actions/setup-python@v3
               with:
