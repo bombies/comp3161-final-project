@@ -37,7 +37,7 @@ jobs:
                   done
             - name: Run init.sql script
               run: |
-                  mysql -h localhost -u user -p password University < scripts/init.sql
+                  mysql -u user < scripts/init.sql
             - name: Set up Python 3.10
               uses: actions/setup-python@v3
               with:
