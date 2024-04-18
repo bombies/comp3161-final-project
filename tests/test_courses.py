@@ -1,11 +1,9 @@
-import datetime
 from app import app
 from tests.mockers.course_mocker import CourseMocker
 import tests.utils as utils
 
 from modules.utils.db import db
 from tests.mockers.account_mocker import AccountMocker
-from dateutil.parser import parse as parse_date
 
 test_client = app.test_client()
 account_mocker = AccountMocker()
