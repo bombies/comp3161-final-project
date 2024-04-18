@@ -63,4 +63,12 @@ jobs:
                   MASTER_PASSWORD: password
                   JWT_SECRET: secret
               run: |
+                  touch .env
+                  echo "DATABASE_HOST=$DATABASE_HOST" >> .env
+                  echo "DATABASE_USER=$DATABASE_USER" >> .env
+                  echo "DATABASE_PASSWORD=$DATABASE_PASSWORD" >> .env
+                  echo "DATABASE=$DATABASE" >> .env
+                  echo "DATABASE_PORT=$DATABASE_PORT" >> .env
+                  echo "MASTER_PASSWORD=$MASTER_PASSWORD" >> .env
+                  echo "JWT_SECRET=$JWT_SECRET" >> .env
                   pytest
