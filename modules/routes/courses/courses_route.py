@@ -1,8 +1,11 @@
-from flask import request, jsonify
+from flask import request, jsonify, send_file
 from app import app
 from modules.models.account import AccountType
 from modules.routes.courses.courses_schema import (
     CreateCourseSchema,
+    CreateCourseSectionItemSchema,
+    CreateCourseSectionSchema,
+    GradeAssignmentSchema,
     UpdateCourseSchema,
     CreateAssignmentSchema,
 )
@@ -403,4 +406,534 @@ def submit_assignment(assignment_id: int):
     )
 
     db.commit()
-    return jsonify({"message": "Assignment submitted!"}), 201
+
+    submission_id = db_cursor.lastrowid
+    return jsonify({"message": "Assignment submitted!", id: submission_id}), 201
+
+
+@app.route("/courses/assignments/<int:assignment_id>/submissions", methods=["GET"])
+@protected_route(roles=[AccountType.Lecturer, AccountType.Admin])
+def get_submissions_for_assignment(assignment_id: int):
+    db_cursor = db.cursor(dictionary=True)
+
+    # Check if the assignment exists.
+    db_cursor.execute("SELECT * FROM Assignment WHERE id = %s", (assignment_id,))
+    assignment = db_cursor.fetchone()
+    if not assignment:
+        return (
+            jsonify({"message": "There is no assignment with that ID!"}),
+            404,
+        )
+
+    # Check if the user is a lecturer and if they teach the course associated with the assignment.
+    session = fetch_session()
+    if session["account_type"] == AccountType.Lecturer.name:
+        # Fetch lecturer details
+        lecturer_details = db_cursor.execute(
+            "SELECT * FROM LecturerDetails WHERE account_id = %s", (session["sub"],)
+        ).fetchone()
+
+        db_cursor.execute(
+            "SELECT * FROM Course WHERE course_code = %s AND lecturer_id = %s",
+            (assignment["course_code"], lecturer_details["lecturer_id"]),
+        )
+
+        if not db_cursor.fetchone():
+            return (
+                jsonify({"message": "You can only view submissions for your courses!"}),
+                403,
+            )
+
+    db_cursor.execute(
+        "SELECT * FROM AssignmentSubmission WHERE assignment_id = %s", (assignment_id,)
+    )
+
+    submissions = db_cursor.fetchall()
+
+    if not len(submissions):
+        return (
+            jsonify({"message": "There are no submissions for this assignment!"}),
+            404,
+        )
+    return jsonify(submissions), 200
+
+
+@app.route(
+    "/courses/assignments/<int:assignment_id>/submissions/<int:submission_id>",
+    methods=["GET"],
+)
+@protected_route(roles=[AccountType.Lecturer, AccountType.Admin])
+def get_specific_submission(assignment_id: int, submission_id: int):
+    db_cursor = db.cursor(dictionary=True)
+
+    # Check if the assignment exists.
+    db_cursor.execute("SELECT * FROM Assignment WHERE id = %s", (assignment_id,))
+    assignment = db_cursor.fetchone()
+    if not assignment:
+        return (
+            jsonify({"message": "There is no assignment with that ID!"}),
+            404,
+        )
+
+    # Check if the user is a lecturer and if they teach the course associated with the assignment.
+    session = fetch_session()
+    if session["account_type"] == AccountType.Lecturer.name:
+        # Fetch lecturer details
+        lecturer_details = db_cursor.execute(
+            "SELECT * FROM LecturerDetails WHERE account_id = %s", (session["sub"],)
+        ).fetchone()
+
+        db_cursor.execute(
+            "SELECT * FROM Course WHERE course_code = %s AND lecturer_id = %s",
+            (assignment["course_code"], lecturer_details["lecturer_id"]),
+        )
+
+        if not db_cursor.fetchone():
+            return (
+                jsonify({"message": "You can only view submissions for your courses!"}),
+                403,
+            )
+
+    db_cursor.execute(
+        "SELECT * FROM AssignmentSubmission WHERE id = %s AND assignment_id = %s AND submission_id = %s",
+        (submission_id, assignment_id, submission_id),
+    )
+
+    submission = db_cursor.fetchone()
+
+    if not submission:
+        return (
+            jsonify(
+                {"message": "There is no submission with that ID for this assignment!"}
+            ),
+            404,
+        )
+    return jsonify(submission), 200
+
+
+@app.route(
+    "/courses/assignments/<int:assignment_id>/submissions/<int:submission_id>/grade",
+    methods=["POST"],
+)
+@protected_route(roles=[AccountType.Lecturer, AccountType.Admin])
+def grade_assignment(assignment_id: int, submission_id: int):
+    body = GradeAssignmentSchema().load(request.get_json(force=True))
+    db_cursor = db.cursor(dictionary=True)
+
+    # Check if the assignment exists.
+    db_cursor.execute("SELECT * FROM Assignment WHERE id = %s", (assignment_id,))
+    assignment = db_cursor.fetchone()
+    if not assignment:
+        return (
+            jsonify({"message": "There is no assignment with that ID!"}),
+            404,
+        )
+
+    # Check if the submission exists.
+    db_cursor.execute(
+        "SELECT * FROM AssignmentSubmission WHERE id = %s AND assignment_id = %s",
+        (submission_id, assignment_id),
+    )
+    submission = db_cursor.fetchone()
+    if not submission:
+        return (
+            jsonify(
+                {"message": "There is no submission with that ID for this assignment!"}
+            ),
+            404,
+        )
+
+    # Check if the user is a lecturer and if they teach the course associated with the assignment.
+    session = fetch_session()
+    if session["account_type"] == AccountType.Lecturer.name:
+        # Fetch lecturer details
+        lecturer_details = db_cursor.execute(
+            "SELECT * FROM LecturerDetails WHERE account_id = %s", (session["sub"],)
+        ).fetchone()
+
+        db_cursor.execute(
+            "SELECT * FROM Course WHERE course_code = %s AND lecturer_id = %s",
+            (assignment["course_code"], lecturer_details["lecturer_id"]),
+        )
+
+        if not db_cursor.fetchone():
+            return (
+                jsonify(
+                    {"message": "You can only grade submissions for your courses!"}
+                ),
+                403,
+            )
+
+    # Grade the assignment.
+    db_cursor.execute(
+        "UPDATE AssignmentSubmission SET grade = %s WHERE assignment_id = %s",
+        (body["grade"], submission_id),
+    )
+
+    db.commit()
+    return jsonify({"message": "Assignment graded!"}), 200
+
+
+@app.route("/courses/<string:course_code>/sections", methods=["POST", "GET"])
+@protected_route()
+def handle_course_sections(course_code: str):
+    if request.method == "POST":
+        return create_course_section(course_code)
+    else:
+        return get_course_sections(course_code)
+
+
+def get_course_sections(course_code: str):
+    db_cursor = db.cursor(dictionary=True)
+
+    # Check if the course exists.
+    db_cursor.execute("SELECT * FROM Course WHERE course_code = %s", (course_code,))
+    course = db_cursor.fetchone()
+    if not course:
+        return (
+            jsonify({"message": "There is no course with that course code!"}),
+            404,
+        )
+
+    # If the user is a student, check if they are enrolled in the course. If the user is a lecturer, check if they teach the course.
+    visibility_res = _check_course_visibility(
+        fetch_session(),
+        course_code,
+        err_msgs={
+            "student_err": "You can only view sections for your courses!",
+            "lecturer_err": "You can only view sections for your courses!",
+        },
+    )
+
+    if visibility_res:
+        return visibility_res
+
+    db_cursor.execute("SELECT * FROM Sections WHERE course_code = %s", (course_code,))
+    sections = db_cursor.fetchall()
+
+    if not len(sections):
+        return jsonify({"message": "There are no sections for this course!"}), 404
+    return jsonify(sections), 200
+
+
+def create_course_section(course_code: str):
+    body = CreateCourseSectionSchema().load(request.get_json(force=True))
+    db_cursor = db.cursor(dictionary=True)
+
+    # Check if the course exists.
+    db_cursor.execute("SELECT * FROM Course WHERE course_code = %s", (course_code,))
+    course = db_cursor.fetchone()
+    if not course:
+        return (
+            jsonify({"message": "There is no course with that course code!"}),
+            404,
+        )
+
+    session = fetch_session()
+    if session["account_type"] == AccountType.Student.name:
+        return (
+            jsonify({"message": "You can't create sections for courses!"}),
+            403,
+        )
+
+    # Check if the user is a lecturer and if they teach the course
+    if session["account_type"] == AccountType.Lecturer.name:
+        # Fetch lecturer details
+        lecturer_details = db_cursor.execute(
+            "SELECT * FROM LecturerDetails WHERE account_id = %s", (session["sub"],)
+        ).fetchone()
+
+        if course["lecturer_id"] != lecturer_details["lecturer_id"]:
+            return (
+                jsonify({"message": "You can only create sections for your courses!"}),
+                403,
+            )
+
+    # Create the course section.
+    db_cursor.execute(
+        "INSERT INTO Sections (course_code, section_name) VALUES (%s, %s)",
+        (
+            course_code,
+            body["section_name"],
+        ),
+    )
+
+    db.commit()
+    section_id = db_cursor.lastrowid
+    return jsonify({"section_id": section_id}), 201
+
+
+@app.route(
+    "/courses/<string:course_code>/sections/<int:section_id>", methods=["POST", "GET"]
+)
+@protected_route()
+def handle_course_section(course_code: str, section_id: int):
+    if request.method == "POST":
+        return create_course_section_item(course_code, section_id)
+    else:
+        return get_course_section(course_code, section_id)
+
+
+def get_course_section(course_code: str, section_id: int):
+    db_cursor = db.cursor(dictionary=True)
+
+    # Check if the course exists.
+    db_cursor.execute("SELECT * FROM Course WHERE course_code = %s", (course_code,))
+    course = db_cursor.fetchone()
+    if not course:
+        return (
+            jsonify({"message": "There is no course with that course code!"}),
+            404,
+        )
+
+    # If the user is a student, check if they are enrolled in the course. If the user is a lecturer, check if they teach the course.
+    visibility_res = _check_course_visibility(
+        fetch_session(),
+        course_code,
+        err_msgs={
+            "student_err": "You can only view sections for your courses!",
+            "lecturer_err": "You can only view sections for your courses!",
+        },
+    )
+
+    if visibility_res:
+        return visibility_res
+
+    db_cursor.execute("SELECT * FROM SectionItems WHERE section_id = %s", (section_id,))
+    section = db_cursor.fetchall()
+
+    if not len(section):
+        return jsonify({"message": "There are no items in this section!"}), 404
+    return jsonify(section), 200
+
+
+def create_course_section_item(course_code: str, section_id: int):
+    # Make sure the user isn't a student
+    session = fetch_session()
+    if session["account_type"] == AccountType.Student.name:
+        return (
+            jsonify({"message": "You can't create section items for courses!"}),
+            403,
+        )
+
+    # If they are a lecturer, check if they teach the course
+    db_cursor = db.cursor(dictionary=True)
+    lecturer_details = db_cursor.execute(
+        "SELECT * FROM LecturerDetails WHERE account_id = %s", (session["sub"],)
+    ).fetchone()
+
+    db_cursor.execute(
+        "SELECT * FROM Course WHERE course_code = %s AND lecturer_id = %s",
+        (course_code, lecturer_details["lecturer_id"]),
+    )
+
+    if not db_cursor.fetchone():
+        return (
+            jsonify({"message": "You can only create section items for your courses!"}),
+            403,
+        )
+
+    # Init form data
+    form_data = request.form.to_dict()
+
+    # Validate data with schema
+    body = CreateCourseSectionItemSchema().load(form_data)
+
+    # If a file is uploaded, save it to the data/course-section-items directory
+    file_path = None
+    if "file" in request.files:
+        uploaded_file = request.files["file"]
+        file_path = (
+            f"data/course-sections/{course_code}/{section_id}/{uploaded_file.filename}"
+        )
+        uploaded_file.save(file_path)
+
+    db_cursor = db.cursor(dictionary=True)
+
+    # Check if the section actually exists for the course
+    db_cursor.execute(
+        "SELECT * FROM Sections WHERE course_code = %s AND section_id = %s",
+        (course_code, section_id),
+    )
+    section = db_cursor.fetchone()
+
+    if not section:
+        return (
+            jsonify({"message": "There is no section with that ID for this course!"}),
+            404,
+        )
+
+    # Save the course section item
+    db_cursor.execute(
+        "INSERT INTO SectionItems (section_id, title, description, deadline, link, file_location) VALUES (%s, %s, %s, %s, %s, %s)",
+        (
+            section_id,
+            body["title"],
+            body.get("description"),
+            body.get("deadline"),
+            body.get("link"),
+            file_path,
+        ),
+    )
+
+    db.commit()
+    section_item_id = db_cursor.lastrowid
+    return jsonify({"section_item_id": section_item_id}), 201
+
+
+@app.route(
+    "/courses/<string:course_code>/sections/<int:section_id>/<int:section_item_id>/file",
+    methods=["GET"],
+)
+@protected_route()
+def download_course_section_item_file(
+    course_code: str, section_id: int, section_item_id: int
+):
+    db_cursor = db.cursor(dictionary=True)
+
+    # Check if the course exists.
+    db_cursor.execute("SELECT * FROM Course WHERE course_code = %s", (course_code,))
+    course = db_cursor.fetchone()
+    if not course:
+        return (
+            jsonify({"message": "There is no course with that course code!"}),
+            404,
+        )
+
+    # If the user is a student, check if they are enrolled in the course. If the user is a lecturer, check if they teach the course.
+    visibility_res = _check_course_visibility(
+        fetch_session(),
+        course_code,
+        err_msgs={
+            "student_err": "You can only view sections for your courses!",
+            "lecturer_err": "You can only view sections for your courses!",
+        },
+    )
+
+    if visibility_res:
+        return visibility_res
+
+    # Check if the section actually exists for the course
+    db_cursor.execute(
+        "SELECT * FROM Sections WHERE course_code = %s AND section_id = %s",
+        (course_code, section_id),
+    )
+
+    db_cursor.execute(
+        "SELECT * FROM SectionItems WHERE item_id = %s AND section_id = %s",
+        (section_item_id, section_id),
+    )
+    section = db_cursor.fetchall()
+
+    if not len(section):
+        return jsonify({"message": "There are no items in this section!"}), 404
+
+    # If the section item has a file, return it
+    if section[0]["file_location"]:
+        return send_file(section[0]["file_location"], as_attachment=True)
+    else:
+        return jsonify({"message": "This section item has no file!"}), 404
+
+
+@app.route(
+    "/courses/<string:course_code>/sections/<int:section_id>/<int:section_item_id>/file",
+    methods=["GET"],
+)
+@protected_route()
+def download_course_section_item_details(
+    course_code: str, section_id: int, section_item_id: int
+):
+    db_cursor = db.cursor(dictionary=True)
+
+    # Check if the course exists.
+    db_cursor.execute("SELECT * FROM Course WHERE course_code = %s", (course_code,))
+    course = db_cursor.fetchone()
+    if not course:
+        return (
+            jsonify({"message": "There is no course with that course code!"}),
+            404,
+        )
+
+    # If the user is a student, check if they are enrolled in the course. If the user is a lecturer, check if they teach the course.
+    visibility_res = _check_course_visibility(
+        fetch_session(),
+        course_code,
+        err_msgs={
+            "student_err": "You can only view sections for your courses!",
+            "lecturer_err": "You can only view sections for your courses!",
+        },
+    )
+
+    if visibility_res:
+        return visibility_res
+
+    # Check if the section actually exists for the course
+    db_cursor.execute(
+        "SELECT * FROM Sections WHERE course_code = %s AND section_id = %s",
+        (course_code, section_id),
+    )
+
+    section = db_cursor.fetchone()
+    if not section:
+        return (
+            jsonify({"message": "There is no section with that ID for this course!"}),
+            404,
+        )
+
+    db_cursor.execute(
+        "SELECT * FROM SectionItems WHERE item_id = %s AND section_id = %s",
+        (section_item_id, section_id),
+    )
+    section = db_cursor.fetchone()
+
+    if not len(section):
+        return jsonify({"message": "There are no items in this section!"}), 404
+
+    return jsonify(section), 200
+
+
+def _check_course_visibility(session, course_code, err_msgs={}):
+    # Check if the user is a student and if they are enrolled in the course. If the user is a lecturer, check if they teach the course.
+    session = fetch_session()
+    if session["account_type"] == AccountType.Student.name:
+        db_cursor = db.cursor(dictionary=True)
+        student_details = db_cursor.execute(
+            "SELECT * FROM StudentDetails WHERE account_id = %s", (session["sub"],)
+        ).fetchone()
+
+        db_cursor.execute(
+            "SELECT * FROM Enrollment WHERE student_id = %s AND course_code = %s",
+            (student_details["student_id"], course_code),
+        )
+        if not db_cursor.fetchone():
+            return (
+                jsonify(
+                    {
+                        "message": err_msgs.get("student_err")
+                        or "You can only view your courses!"
+                    }
+                ),
+                403,
+            )
+    elif session["account_type"] == AccountType.Lecturer.name:
+        db_cursor = db.cursor(dictionary=True)
+        # Fetch lecturer details
+        lecturer_details = db_cursor.execute(
+            "SELECT * FROM LecturerDetails WHERE account_id = %s", (session["sub"],)
+        ).fetchone()
+
+        db_cursor.execute(
+            "SELECT * FROM Course WHERE course_code = %s AND lecturer_id = %s",
+            (course_code, lecturer_details["lecturer_id"]),
+        )
+
+        if not db_cursor.fetchone():
+            return (
+                jsonify(
+                    {
+                        "message": err_msgs.get("lecturer_err")
+                        or "You can only view your courses!"
+                    }
+                ),
+                403,
+            )

@@ -20,3 +20,19 @@ class CreateAssignmentSchema(Schema):
     description = fields.Str(required=False)
     deadline = fields.DateTime(required=True)
     total_marks = fields.Float(required=True)
+
+
+class GradeAssignmentSchema(Schema):
+    grade = fields.Float(required=True)
+
+
+class CreateCourseSectionSchema(Schema):
+    section_name = fields.Str(required=True)
+
+
+class CreateCourseSectionItemSchema(Schema):
+    title = fields.Str(required=True)
+    description = fields.Str(required=False)
+    deadline = fields.DateTime(required=False)
+    link = fields.Str(required=False)
+    file_location = fields.Str(required=False)
