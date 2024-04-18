@@ -6,8 +6,8 @@ from tests.mockers.account_mocker import (
     MockStudentDetails,
 )
 from flask import Response
-from app import app
 import jwt
+import os
 
 account_mocker = AccountMocker()
 
@@ -17,7 +17,7 @@ def create_token(fields):
         payload={
             **fields,
         },
-        key=app.config["JWT_SECRET"],
+        key=os.getenv("JWT_SECRET"),
         algorithm="HS256",
     )
 
