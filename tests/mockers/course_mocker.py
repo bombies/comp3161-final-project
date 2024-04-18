@@ -21,7 +21,7 @@ class MockAssignment(TypedDict):
     course_code: str
     title: str
     description: str | None
-    deadline: datetime
+    deadline: datetime.datetime
     total_marks: float
 
 
