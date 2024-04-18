@@ -1,3 +1,5 @@
+DROP DATABASE IF EXISTS University;
+
 CREATE DATABASE University;
 
 USE University;
