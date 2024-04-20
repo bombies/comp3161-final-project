@@ -525,6 +525,12 @@ def test_get_assigments():
         )
         db.commit()
 
+        # Delete the student
+        db_cursor.execute(
+            "DELETE FROM Account WHERE account_id = %s", (mock_student["account_id"],)
+        )
+        db.commit()
+
 
 def test_submit_assignment():
     mock_lecturer = AccountMocker.insert_mock_lecturer()
@@ -965,6 +971,12 @@ def test_get_course_sections():
         # Delete the lecturer
         db_cursor.execute(
             "DELETE FROM Account WHERE account_id = %s", (mock_lecturer["account_id"],)
+        )
+        db.commit()
+
+        # Delete the student
+        db_cursor.execute(
+            "DELETE FROM Account WHERE account_id = %s", (mock_student["account_id"],)
         )
         db.commit()
 
