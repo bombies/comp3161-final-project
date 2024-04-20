@@ -1,7 +1,6 @@
 from typing import TypedDict
 from faker import Faker
 
-from modules.routes.auth.auth_route import hash_password
 from modules.utils.db import db
 
 
@@ -90,7 +89,7 @@ class AccountMocker:
             "INSERT INTO Account (email, password, name, account_type) VALUES (%s, %s, %s, %s)",
             (
                 lecturer_account["email"],
-                hash_password(lecturer_account["password"]),
+                lecturer_account["password"],
                 lecturer_account["name"],
                 lecturer_account["account_type"],
             ),
@@ -126,7 +125,7 @@ class AccountMocker:
             "INSERT INTO Account (email, password, name, account_type) VALUES (%s, %s, %s, %s)",
             (
                 student_account["email"],
-                hash_password(student_account["password"]),
+                student_account["password"],
                 student_account["name"],
                 student_account["account_type"],
             ),

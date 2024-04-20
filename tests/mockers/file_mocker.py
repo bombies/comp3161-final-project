@@ -11,7 +11,7 @@ class FileMocker:
     def __init__(self):
         self.fake = Faker()
 
-    def mock_file(self):
+    def mock_file(self) -> MockFile:
         return {
             "file_name": self.fake.file_name(),
             "file_content": self.fake.paragraphs(),

@@ -10,7 +10,12 @@ from modules.routes.courses.courses_schema import (
     CreateAssignmentSchema,
 )
 from modules.utils.db import db
-from modules.utils.route_utils import authenticate, fetch_session, protected_route
+from modules.utils.route_utils import (
+    authenticate,
+    create_missing_dirs,
+    fetch_session,
+    protected_route,
+)
 
 
 @app.route("/courses", methods=["POST"])
@@ -378,7 +383,7 @@ def get_assignments(course_code: str):
     return jsonify(assignments), 200
 
 
-@app.route("/courses/assignments/<int:assignment_id>", methods=["POST"])
+@app.route("/courses/assignments/<int:assignment_id>/submit", methods=["POST"])
 @protected_route([AccountType.Student])
 def submit_assignment(assignment_id: int):
     uploaded_file = request.files.get("file")
@@ -392,7 +397,9 @@ def submit_assignment(assignment_id: int):
     student_details = _fetch_student_details_from_session(session)
 
     # Check if the assignment exists.
-    db_cursor.execute("SELECT * FROM Assignment WHERE id = %s", (assignment_id,))
+    db_cursor.execute(
+        "SELECT * FROM Assignment WHERE assignment_id = %s", (assignment_id,)
+    )
     assignment = db_cursor.fetchone()
     if not assignment:
         return (
@@ -423,7 +430,9 @@ def submit_assignment(assignment_id: int):
         )
 
     # Save the uploaded file to the data/assignments directory
-    file_path = f"data/assignments/{assignment_id}_{student_details['student_id']}_{uploaded_file.filename}"
+    file_path = f"data/assignments/{assignment_id}/{student_details['student_id']}_{uploaded_file.filename}"
+
+    create_missing_dirs(file_path)
     uploaded_file.save(file_path)
 
     # Submit the assignment.
@@ -439,16 +448,21 @@ def submit_assignment(assignment_id: int):
     db.commit()
 
     submission_id = db_cursor.lastrowid
-    return jsonify({"message": "Assignment submitted!", id: submission_id}), 201
+    return (
+        jsonify({"message": "Assignment submitted!", "submission_id": submission_id}),
+        201,
+    )
 
 
 @app.route("/courses/assignments/<int:assignment_id>/submissions", methods=["GET"])
-@protected_route(roles=[AccountType.Lecturer, AccountType.Admin])
+@protected_route()
 def get_submissions_for_assignment(assignment_id: int):
     db_cursor = db.cursor(dictionary=True)
 
     # Check if the assignment exists.
-    db_cursor.execute("SELECT * FROM Assignment WHERE id = %s", (assignment_id,))
+    db_cursor.execute(
+        "SELECT * FROM Assignment WHERE assignment_id = %s", (assignment_id,)
+    )
     assignment = db_cursor.fetchone()
     if not assignment:
         return (
@@ -472,11 +486,28 @@ def get_submissions_for_assignment(assignment_id: int):
                 jsonify({"message": "You can only view submissions for your courses!"}),
                 403,
             )
+    elif session["account_type"] == AccountType.Student.name:
+        # Fetch StudentDetails record
+        student_details = _fetch_student_details_from_session(session)
 
-    db_cursor.execute(
-        "SELECT * FROM AssignmentSubmission WHERE assignment_id = %s", (assignment_id,)
-    )
+        db_cursor.execute(
+            "SELECT * FROM Enrollment WHERE student_id = %s AND course_code = %s",
+            (student_details["student_id"], assignment["course_code"]),
+        )
 
+        if not db_cursor.fetchone():
+            return (
+                jsonify({"message": "You can only view submissions for your courses!"}),
+                403,
+            )
+
+    query = "SELECT * FROM AssignmentSubmission WHERE assignment_id = %s"
+    query_params = (assignment_id,)
+    if session["account_type"] == AccountType.Student.name:
+        query += " AND student_id = %s"
+        query_params += (student_details["student_id"],)
+
+    db_cursor.execute(query, query_params)
     submissions = db_cursor.fetchall()
 
     if not len(submissions):
@@ -491,12 +522,14 @@ def get_submissions_for_assignment(assignment_id: int):
     "/courses/assignments/<int:assignment_id>/submissions/<int:submission_id>",
     methods=["GET"],
 )
-@protected_route(roles=[AccountType.Lecturer, AccountType.Admin])
+@protected_route()
 def get_specific_submission(assignment_id: int, submission_id: int):
     db_cursor = db.cursor(dictionary=True)
 
     # Check if the assignment exists.
-    db_cursor.execute("SELECT * FROM Assignment WHERE id = %s", (assignment_id,))
+    db_cursor.execute(
+        "SELECT * FROM Assignment WHERE assignment_id = %s", (assignment_id,)
+    )
     assignment = db_cursor.fetchone()
     if not assignment:
         return (
@@ -520,10 +553,30 @@ def get_specific_submission(assignment_id: int, submission_id: int):
                 jsonify({"message": "You can only view submissions for your courses!"}),
                 403,
             )
+    elif session["account_type"] == AccountType.Student.name:
+        # Fetch StudentDetails record
+        student_details = _fetch_student_details_from_session(session)
+
+        db_cursor.execute(
+            "SELECT * FROM Enrollment WHERE student_id = %s AND course_code = %s",
+            (student_details["student_id"], assignment["course_code"]),
+        )
+
+        if not db_cursor.fetchone():
+            return (
+                jsonify({"message": "You can only view submissions for your courses!"}),
+                403,
+            )
+
+    query = "SELECT * FROM AssignmentSubmission WHERE submission_id = %s AND assignment_id = %s"
+    query_params = (submission_id, assignment_id)
+    if session["account_type"] == AccountType.Student.name:
+        query += " AND student_id = %s"
+        query_params += (student_details["student_id"],)
 
     db_cursor.execute(
-        "SELECT * FROM AssignmentSubmission WHERE id = %s AND assignment_id = %s AND submission_id = %s",
-        (submission_id, assignment_id, submission_id),
+        query,
+        query_params,
     )
 
     submission = db_cursor.fetchone()
@@ -548,7 +601,9 @@ def grade_assignment(assignment_id: int, submission_id: int):
     db_cursor = db.cursor(dictionary=True)
 
     # Check if the assignment exists.
-    db_cursor.execute("SELECT * FROM Assignment WHERE id = %s", (assignment_id,))
+    db_cursor.execute(
+        "SELECT * FROM Assignment WHERE assignment_id = %s", (assignment_id,)
+    )
     assignment = db_cursor.fetchone()
     if not assignment:
         return (
@@ -558,7 +613,7 @@ def grade_assignment(assignment_id: int, submission_id: int):
 
     # Check if the submission exists.
     db_cursor.execute(
-        "SELECT * FROM AssignmentSubmission WHERE id = %s AND assignment_id = %s",
+        "SELECT * FROM AssignmentSubmission WHERE submission_id = %s AND assignment_id = %s",
         (submission_id, assignment_id),
     )
     submission = db_cursor.fetchone()
@@ -574,7 +629,7 @@ def grade_assignment(assignment_id: int, submission_id: int):
     session = fetch_session()
     if session["account_type"] == AccountType.Lecturer.name:
         # Fetch lecturer details
-        lecturer_details = _fetch_lecturer_details_from_session
+        lecturer_details = _fetch_lecturer_details_from_session(session)
 
         db_cursor.execute(
             "SELECT * FROM Course WHERE course_code = %s AND lecturer_id = %s",
@@ -591,12 +646,20 @@ def grade_assignment(assignment_id: int, submission_id: int):
 
     # Grade the assignment.
     db_cursor.execute(
-        "UPDATE AssignmentSubmission SET grade = %s WHERE assignment_id = %s",
+        "UPDATE AssignmentSubmission SET grade = %s WHERE submission_id = %s",
         (body["grade"], submission_id),
     )
 
     db.commit()
-    return jsonify({"message": "Assignment graded!"}), 200
+
+    # Fetch updated submission
+    db_cursor.execute(
+        "SELECT * FROM AssignmentSubmission WHERE submission_id = %s AND assignment_id = %s",
+        (submission_id, assignment_id),
+    )
+    submission = db_cursor.fetchone()
+
+    return jsonify({**submission, "grade": body["grade"]}), 200
 
 
 @app.route("/courses/<string:course_code>/sections", methods=["POST", "GET"])
@@ -722,12 +785,25 @@ def get_course_section(course_code: str, section_id: int):
     if visibility_res:
         return visibility_res
 
-    db_cursor.execute("SELECT * FROM SectionItems WHERE section_id = %s", (section_id,))
-    section = db_cursor.fetchall()
+    # Check if the section exists
+    db_cursor.execute(
+        "SELECT * FROM Sections WHERE course_code = %s AND section_id = %s",
+        (course_code, section_id),
+    )
+    section = db_cursor.fetchone()
 
-    if not len(section):
+    if not section:
+        return (
+            jsonify({"message": "There is no section with that ID for this course!"}),
+            404,
+        )
+
+    db_cursor.execute("SELECT * FROM SectionItems WHERE section_id = %s", (section_id,))
+    section_items = db_cursor.fetchall()
+
+    if not section:
         return jsonify({"message": "There are no items in this section!"}), 404
-    return jsonify(section), 200
+    return jsonify({**section, "items": section_items}), 200
 
 
 def create_course_section_item(course_code: str, section_id: int):
@@ -791,7 +867,11 @@ def create_course_section_item(course_code: str, section_id: int):
             section_id,
             body["title"],
             body.get("description"),
-            body.get("deadline"),
+            (
+                body.get("deadline").strftime("%Y-%m-%dT%H:%M:%S.%f%z")
+                if body.get("deadline")
+                else None
+            ),
             body.get("link"),
             file_path,
         ),
@@ -799,7 +879,14 @@ def create_course_section_item(course_code: str, section_id: int):
 
     db.commit()
     section_item_id = db_cursor.lastrowid
-    return jsonify({"section_item_id": section_item_id}), 201
+
+    # Fetch created sectiom item
+    db_cursor.execute(
+        "SELECT * FROM SectionItems WHERE item_id = %s", (section_item_id,)
+    )
+    section_item = db_cursor.fetchone()
+
+    return jsonify(**section_item), 201
 
 
 @app.route(
@@ -839,19 +926,31 @@ def download_course_section_item_file(
         "SELECT * FROM Sections WHERE course_code = %s AND section_id = %s",
         (course_code, section_id),
     )
+    section = db_cursor.fetchone()
+
+    if not section:
+        return (
+            jsonify({"message": "There is no section with that ID for this course!"}),
+            404,
+        )
 
     db_cursor.execute(
         "SELECT * FROM SectionItems WHERE item_id = %s AND section_id = %s",
         (section_item_id, section_id),
     )
-    section = db_cursor.fetchall()
+    section_item = db_cursor.fetchone()
 
-    if not len(section):
-        return jsonify({"message": "There are no items in this section!"}), 404
+    if not section_item:
+        return (
+            jsonify(
+                {"message": "There is not section item with that ID in that section!"}
+            ),
+            404,
+        )
 
     # If the section item has a file, return it
-    if section[0]["file_location"]:
-        return send_file(section[0]["file_location"], as_attachment=True)
+    if section_item["file_location"]:
+        return send_file(section_item["file_location"], as_attachment=True)
     else:
         return jsonify({"message": "This section item has no file!"}), 404
 

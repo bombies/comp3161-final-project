@@ -1,5 +1,7 @@
 from functools import wraps
+from io import TextIOWrapper
 from json import JSONDecodeError
+import os
 from traceback import print_exception
 from flask import jsonify, request
 from marshmallow import ValidationError
@@ -81,3 +83,19 @@ def fetch_session():
         return None
     except ValueError:
         return None
+
+
+def open_file(file_path, mode) -> TextIOWrapper:
+    create_missing_dirs(file_path)
+    return open(file_path, mode)
+
+
+def delete_file(file_path):
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
+
+def create_missing_dirs(file_path):
+    directory_path = os.path.dirname(file_path)
+    if not os.path.exists(directory_path):
+        os.makedirs(directory_path, exist_ok=True)

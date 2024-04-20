@@ -120,10 +120,10 @@ CREATE TABLE Assignment (
 -- AssignmentSubmission table 
 CREATE TABLE AssignmentSubmission (
     submission_id INT AUTO_INCREMENT PRIMARY KEY,
-    assignment_id INT,
-    student_id INT,
+    assignment_id INT NOT NULL,
+    student_id INT NOT NULL,
     submission_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    file_path VARCHAR(255),
+    file_path VARCHAR(255) NOT NULL,
     grade DECIMAL(5, 2),
     FOREIGN KEY (assignment_id) REFERENCES Assignment(assignment_id) ON DELETE CASCADE,
     FOREIGN KEY (student_id) REFERENCES StudentDetails(student_id) ON DELETE CASCADE,
