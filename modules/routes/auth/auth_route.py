@@ -70,7 +70,7 @@ def register():
             password,
             body["name"],
             body.get("contact_info"),
-            AccountType.Student.name,
+            body["account_type"],
         ),
     )
 
