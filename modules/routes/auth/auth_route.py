@@ -3,7 +3,6 @@ from app import app
 from marshmallow import Schema, fields, validate
 from modules.models.account import AccountType
 from modules.utils.db import db
-from bcrypt import hashpw, gensalt, checkpw
 from secrets import token_urlsafe
 import jwt
 
@@ -68,7 +67,7 @@ def register():
         "INSERT INTO Account (email, password, name, contact_info, account_type) VALUES (%s, %s, %s, %s, %s)",
         (
             body["email"],
-            hash_password(password),
+            password,
             body["name"],
             body.get("contact_info"),
             AccountType.Student.name,
@@ -141,7 +140,7 @@ def login():
             )
 
         # If the password is incorrect, return an error.
-        if not checkpw(body["password"].encode("utf-8"), user[2].encode("utf-8")):
+        if not body["password"] == user[2]:
             return (
                 jsonify({"message": "Invalid credentails!"}),
                 400,
@@ -165,7 +164,3 @@ def login():
         )
 
     return handle_route(handler=handler)
-
-
-def hash_password(password: str):
-    return hashpw(password.encode("utf-8"), gensalt()).decode("utf-8")
