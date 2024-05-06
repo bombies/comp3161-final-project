@@ -27,7 +27,7 @@ def create_calendar_event(course_id: str):
         return jsonify({"message": f"Failed to create calendar event: {str(e)}"}), 500
 
 @app.route("/calendar/events/course/<string:course_id>", methods=["GET"])
-@protected_route(roles=[AccountType.Admin, AccountType.Lecturer, AccountType.student])
+@protected_route(roles=[AccountType.Admin, AccountType.Lecturer, AccountType.Student])
 def get_course_calendar_events(course_id):
     # Retrieve all calendar events
     db_cursor = db.cursor()
