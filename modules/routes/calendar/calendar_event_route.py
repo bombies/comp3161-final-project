@@ -9,7 +9,7 @@ from modules.routes.calendar.calendar_event_schema import (
 from modules.utils.db import db
 from modules.utils.route_utils import authenticate, fetch_session, protected_route
 
-@app.route("/calendar/<str:course_id>", methods=["POST"])
+@app.route("/calendar/<string:course_id>", methods=["POST"])
 @protected_route(roles=[AccountType.Admin, AccountType.Lecturer])
 def create_calendar_event(course_id: str):
     body = CalendarEventSchema().load(request.get_json(force=True))
