@@ -17,7 +17,7 @@ def create_calendar_event(course_id: str):
     db_cursor = db.cursor()
     try:
         db_cursor.execute(
-            "INSERT INTO CalendarEvent (course_id, date, event_name, event_no) VALUES (%s, %s, %s, %s)",
+            "INSERT INTO CalendarEvent (course_id, date, event_name) VALUES (%s, %s, %s)",
             (body["course_id"], body["date"], body["event_name"]),
         )
         db.commit()
@@ -27,6 +27,7 @@ def create_calendar_event(course_id: str):
         return jsonify({"message": f"Failed to create calendar event: {str(e)}"}), 500
 
 @app.route("/calendar/events/course/<string:course_id>", methods=["GET"])
+@protected_route(roles=[AccountType.Admin, AccountType.Lecturer, AccountType.student])
 def get_course_calendar_events(course_id):
     # Retrieve all calendar events
     db_cursor = db.cursor()
@@ -39,7 +40,15 @@ def get_course_calendar_events(course_id):
     # Return data as per requirements
 
 @app.route("/calendar/events/student/<int:student_id>", methods=["GET"])
+@protected([AccountType.Student, AccountType.Admin])
 def get_student_calendar_events(student_id):
+    session = fetch_session()
+    # Check if the session is a student account
+    if session.get("account_type") == AccountType.Student:
+        # Check if the student ID from the session matches the ID passed to the function
+        if session.get("student_id") != student_id:
+            return jsonify({"message": "Unauthorized access to student calendar events"}), 403
+
     # Parse the request body to get the start date and end date
     request_data = request.get_json(force=True)
     date_range = DateRangeSchema().load(request_data)
