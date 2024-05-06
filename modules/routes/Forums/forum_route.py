@@ -14,11 +14,24 @@ from modules.utils.route_utils import authenticate, fetch_session, protected_rou
 from datetime import date
 
 @app.route("/forums/course/<string:course_code>", methods=["GET", "POST"])
-@protected_route(roles=[AccountType.Admin, AccountType.Lecturer])
+@protected_route()
 def handle_course_forums(course_code):
+    session = fetch_session()
+    db_cursor = db.cursor(dictionary=True)
+    student_details = _fetch_student_details_from_session(session)
     if request.method == "GET":
+        # Check if the student is enrolled in the course.
+        if session["account_type"] == AccountType.Student.name:
+            db_cursor.execute(
+                "SELECT * FROM Enrollment WHERE student_id = %s AND course_code = %s",
+                (student_details["student_id"], course_code),
+            )
+            if not db_cursor.fetchone():
+                return (
+                    jsonify({"message": "You are not enrolled in this course!"}),
+                    400,
+                )
         # Original logic to retrieve forums for the course
-        db_cursor = db.cursor()
         db_cursor.execute("SELECT * FROM DiscussionForum WHERE course_code = %s", (course_code,))
         forums = db_cursor.fetchall()
         if not forums:
@@ -29,7 +42,6 @@ def handle_course_forums(course_code):
         # Additional logic for creating a forum for the course
         return create_course_forum(course_code)
 
-from modules.utils.auth_utils import fetch_session
 
 @app.route("/forums/course/<string:course_code>", methods=["POST"])
 @protected_route(roles=[AccountType.Admin, AccountType.Lecturer])
@@ -37,9 +49,6 @@ def create_course_forum(course_code):
     # Check if the user is a student
     session = fetch_session()
     db_cursor = db.cursor(dictionary=True)
-    if session["account_type"] == AccountType.Student.name:
-        return jsonify({"message": "Students are not allowed to create forums"}), 403
-
     # Check if the user is a lecturer who teaches this course
     if session["account_type"] == AccountType.Lecturer.name:
         # Check if the lecturer teaches the specified course
@@ -68,8 +77,8 @@ def create_course_forum(course_code):
 
 
 @app.route("/threads/forum/<int:forum_id>", methods=["GET", "POST"])
-@protected_route(roles=[AccountType.Admin, AccountType.Lecturer])
-def handle_forum_threads(forum_id, course_code):
+@protected_route()
+def handle_forum_threads(forum_id: int, course_code: str):
     # Check if the user is a student
     session = fetch_session()
     db_cursor = db.cursor(dictionary=True)
@@ -93,9 +102,7 @@ def handle_forum_threads(forum_id, course_code):
     # Convert the threads data into JSON format and return
     return jsonify(threads), 200
 
-@app.route("/threads/forum/<int:forum_id>", methods=["POST"])
-@protected_route(roles=[AccountType.Admin, AccountType.Lecturer, AccountType.Student])
-def add_thread_to_forum(forum_id, course_code):
+def add_thread_to_forum(forum_id: int, course_code: str):
     # Check if the user is a student
     session = fetch_session()
     db_cursor = db.cursor(dictionary=True)
@@ -129,11 +136,23 @@ def add_thread_to_forum(forum_id, course_code):
 
 @app.route("/thread/<int:thread_id>/reply", methods=["POST"])
 @protected_route()
-def add_reply_to_thread(thread_id):
+def add_reply_to_thread(thread_id: int, course_code: str):
+    session = fetch_session()
+    db_cursor = db.cursor(dictionary=True)
+    student_details = _fetch_student_details_from_session(session)
     body = NewDiscussionReplySchema().load(request.get_json(force=True))
     user_id = fetch_session()["sub"]
-
-    db_cursor = db.cursor()
+    # Check if the student is enrolled in the course.
+    if session["account_type"] == AccountType.Student.name:
+        db_cursor.execute(
+            "SELECT * FROM Enrollment WHERE student_id = %s AND course_code = %s",
+            (student_details["student_id"], course_code),
+        )
+        if not db_cursor.fetchone():
+            return (
+                jsonify({"message": "You are not enrolled in this course!"}),
+                400,
+            )   
     try:
         db_cursor.execute(
             "INSERT INTO DiscussionReply (thread_id, user_id, reply_text, reply_time) VALUES (%s, %s, %s, %s)",
