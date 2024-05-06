@@ -1,5 +1,4 @@
 from flask import Flask, jsonify
-import psycopg2
 from app import app
 from modules.utils.db import db
 db_cursor = db.cursor()
