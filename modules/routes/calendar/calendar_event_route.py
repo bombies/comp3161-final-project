@@ -40,7 +40,7 @@ def get_course_calendar_events(course_id):
     # Return data as per requirements
 
 @app.route("/calendar/events/student/<int:student_id>", methods=["GET"])
-@protected([AccountType.Student, AccountType.Admin])
+@protected_route([AccountType.Student, AccountType.Admin])
 def get_student_calendar_events(student_id):
     session = fetch_session()
     # Check if the session is a student account
