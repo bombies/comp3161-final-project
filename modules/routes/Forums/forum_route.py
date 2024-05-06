@@ -1,41 +1,43 @@
 from flask import request, jsonify
 from app import app
 from modules.models.account import AccountType
+from modules.routes.courses.courses_route import (
+    _check_course_visibility,
+)
 from modules.routes.forums.forum_schema import (
     ForumSchema,
-    NewDiscussionThreadSchema,
     NewDiscussionReplySchema,
 )
 from modules.utils.db import db
 from modules.utils.route_utils import authenticate, fetch_session, protected_route
-from datetime import date
+from datetime import date, datetime
+import traceback
 
 
-@app.route("/forums/course/<string:course_code>", methods=["GET", "POST"])
+@app.route("/course/<string:course_code>/forums", methods=["GET", "POST"])
 @protected_route()
 def handle_course_forums(course_code):
     if request.method == "GET":
-        return get_course_forum(course_code)
+        return get_course_forums(course_code)
     elif request.method == "POST":
         return create_course_forum(course_code)
 
 
-def get_course_forum(
+def get_course_forums(
     course_code, session=fetch_session(), db_cursor=db.cursor(dictionary=True)
 ):
-    student_details = _fetch_student_details_from_session(session)
+    visibility_res = _check_course_visibility(
+        session,
+        course_code,
+        err_msgs={
+            "student_err": "You can only view forums for your courses!",
+            "lecturer_err": "You can only view forums for your courses!",
+        },
+    )
 
-    # Check if the student is enrolled in the course.
-    if session["account_type"] == AccountType.Student.name:
-        db_cursor.execute(
-            "SELECT * FROM Enrollment WHERE student_id = %s AND course_code = %s",
-            (student_details["student_id"], course_code),
-        )
-        if not db_cursor.fetchone():
-            return (
-                jsonify({"message": "You are not enrolled in this course!"}),
-                400,
-            )
+    if visibility_res:
+        return visibility_res
+
     # Original logic to retrieve forums for the course
     db_cursor.execute(
         "SELECT * FROM DiscussionForum WHERE course_code = %s", (course_code,)
@@ -52,38 +54,54 @@ def create_course_forum(course_code):
     if auth_res:
         return auth_res
 
-    # Check if the user is a student
     session = fetch_session()
     db_cursor = db.cursor(dictionary=True)
+
+    if session["account_type"] == AccountType.Student.name:
+        return jsonify({"message": "Students are not allowed to create forums"}), 403
+
     # Check if the user is a lecturer who teaches this course
-    if session["account_type"] == AccountType.Lecturer.name:
-        # Check if the lecturer teaches the specified course
-        lecture_details = db_cursor.execute(
-            "SELECT * FROM Course WHERE lecturer_id = %s", (session["sub"],)
-        ).fetchone()
-        if course_code != lecture_details["course_code"]:
-            return jsonify({"message": "You can only view your own courses!"}), 403
+    visibility_res = _check_course_visibility(
+        fetch_session(),
+        course_code,
+        err_msgs={
+            "lecturer_err": "You can only create forums for your own courses!",
+        },
+    )
+
+    if visibility_res:
+        return visibility_res
 
     # Proceed with forum creation logic
     body = ForumSchema().load(request.get_json(force=True))
-    body["course_code"] = course_code
 
-    db_cursor = db.cursor()
+    db_cursor = db.cursor(dictionary=True)
     try:
         db_cursor.execute(
             "INSERT INTO DiscussionForum (topic, post_time, creator, course_code) VALUES (%s, %s, %s, %s)",
-            (body["topic"], date.today(), fetch_session()["sub"], body["course_code"]),
+            (body["topic"], date.today(), fetch_session()["sub"], course_code),
         )
         db.commit()
-        return jsonify({"message": "Forum created successfully"}), 201
+
+        created_forum_id = db_cursor.lastrowid
+        db_cursor.execute(
+            "SELECT * FROM DiscussionForum WHERE forum_id = %s", (created_forum_id,)
+        )
+
+        created_forum = db_cursor.fetchone()
+        return jsonify(created_forum), 201
     except Exception as e:
+        traceback.print_exc()
         db.rollback()
         return jsonify({"message": f"Failed to create forum: {str(e)}"}), 500
 
 
-@app.route("/threads/forum/<int:forum_id>", methods=["GET", "POST"])
+@app.route(
+    "/course/<string:course_code>/forums/<int:forum_id>/threads",
+    methods=["GET", "POST"],
+)
 @protected_route()
-def handle_forum_threads(forum_id: int, course_code: str):
+def handle_forum_threads(course_code: str, forum_id: int):
     if request.method == "GET":
         return get_forum_threads(forum_id, course_code)
     elif request.method == "POST":
@@ -98,13 +116,16 @@ def get_forum_threads(forum_id: int, course_code: str):
         return jsonify({"message": "Students are not allowed to create forums"}), 403
 
     # Check if the user is a lecturer who teaches this course
-    if session["account_type"] == AccountType.Lecturer.name:
-        # Check if the lecturer teaches the specified course
-        lecture_details = db_cursor.execute(
-            "SELECT * FROM Course WHERE lecturer_id = %s", (session["sub"],)
-        ).fetchone()
-        if course_code != lecture_details["course_code"]:
-            return jsonify({"message": "You can only view your own courses!"}), 403
+    visibility_res = _check_course_visibility(
+        fetch_session(),
+        course_code,
+        err_msgs={
+            "lecturer_err": "You can only view your own courses!",
+        },
+    )
+
+    if visibility_res:
+        return visibility_res
 
     # Proceed with retrieving discussion threads for the forum
     db_cursor.execute("SELECT * FROM DiscussionThread WHERE forum_id = %s", (forum_id,))
@@ -123,67 +144,107 @@ def add_thread_to_forum(forum_id: int, course_code: str):
         return jsonify({"message": "Students are not allowed to create forums"}), 403
 
     # Check if the user is a lecturer who teaches this course
-    if session["account_type"] == AccountType.Lecturer.name:
-        # Check if the lecturer teaches the specified course
-        lecture_details = db_cursor.execute(
-            "SELECT * FROM Course WHERE lecturer_id = %s", (session["sub"],)
-        ).fetchone()
-        if course_code != lecture_details["course_code"]:
-            return jsonify({"message": "You can only view your own courses!"}), 403
+    visibility_res = _check_course_visibility(
+        fetch_session(),
+        course_code,
+        err_msgs={
+            "lecturer_err": "You can only view your own courses!",
+        },
+    )
 
-    # Proceed with adding the discussion thread to the forum
-    body = NewDiscussionThreadSchema().load(request.get_json(force=True))
-    user_id = session["user_id"]  # Assuming user_id is obtained from JWT token
+    if visibility_res:
+        return visibility_res
 
     try:
         db_cursor.execute(
-            "INSERT INTO DiscussionThread (title, post, forum_id, user_id) VALUES (%s, %s, %s, %s)",
-            (body["title"], body["post"], forum_id, user_id),
+            "INSERT INTO DiscussionThread (replies, timeStamp, forum_id) VALUES (%s, %s, %s)",
+            (0, datetime.now(), forum_id),
         )
         db.commit()
-        return jsonify({"message": "Discussion thread added successfully"}), 201
+
+        thread_id = db_cursor.lastrowid
+        db_cursor.execute(
+            "SELECT * FROM DiscussionThread WHERE thread_id = %s", (thread_id,)
+        )
+
+        thread = db_cursor.fetchone()
+        return jsonify(thread), 201
     except Exception as e:
+        traceback.print_exc()
         db.rollback()
         return jsonify({"message": f"Failed to add discussion thread: {str(e)}"}), 500
 
 
-@app.route("/thread/<int:thread_id>/reply", methods=["POST"])
+@app.route(
+    "/course/<string:course_code>/forums/<int:forum_id>/threads/<int:thread_id>/reply",
+    methods=["POST"],
+)
 @protected_route()
-def add_reply_to_thread(thread_id: int, course_code: str):
-    session = fetch_session()
+def add_reply_to_thread(course_code: str, forum_id: int, thread_id: int):
     db_cursor = db.cursor(dictionary=True)
-    student_details = _fetch_student_details_from_session(session)
     body = NewDiscussionReplySchema().load(request.get_json(force=True))
     user_id = fetch_session()["sub"]
-    # Check if the student is enrolled in the course.
-    if session["account_type"] == AccountType.Student.name:
-        db_cursor.execute(
-            "SELECT * FROM Enrollment WHERE student_id = %s AND course_code = %s",
-            (student_details["student_id"], course_code),
-        )
-        if not db_cursor.fetchone():
-            return (
-                jsonify({"message": "You are not enrolled in this course!"}),
-                400,
-            )
+
+    # Check if the user is a lecturer who teaches this course
+    visibility_res = _check_course_visibility(
+        fetch_session(),
+        course_code,
+        err_msgs={
+            "lecturer_err": "You can only make replies to threads in courses that you lecture!",
+            "student_err": "You are not enrolled in this course!",
+        },
+    )
+
+    if visibility_res:
+        return visibility_res
+
     try:
         db_cursor.execute(
             "INSERT INTO DiscussionReply (thread_id, user_id, reply_text, reply_time) VALUES (%s, %s, %s, %s)",
             (thread_id, user_id, body["reply_text"], date.today()),
         )
         db.commit()
-        return jsonify({"message": "Reply added successfully"}), 201
+
+        reply_id = db_cursor.lastrowid
+        db_cursor.execute(
+            "SELECT * FROM DiscussionReply WHERE reply_id = %s", (reply_id,)
+        )
+
+        reply = db_cursor.fetchone()
+        return jsonify(reply), 201
     except Exception as e:
+        traceback.print_exc()
         db.rollback()
         return jsonify({"message": f"Failed to add reply: {str(e)}"}), 500
 
 
-def _fetch_student_details_from_session(session):
-    if session["account_type"] != AccountType.Student.name:
-        return None
-
+@app.route(
+    "/course/<string:course_code>/forums/<int:forum_id>/threads/<int:thread_id>/replies",
+    methods=["GET"],
+)
+@protected_route()
+def get_replies(course_code: str, forum_id: int, thread_id: int):
     db_cursor = db.cursor(dictionary=True)
-    db_cursor.execute(
-        "SELECT * FROM StudentDetails WHERE account_id = %s", (session["sub"],)
+
+    # Check if the user is a lecturer who teaches this course
+    visibility_res = _check_course_visibility(
+        fetch_session(),
+        course_code,
+        err_msgs={
+            "lecturer_err": "You can only view your own courses!",
+            "student_err": "You are not enrolled in this course!",
+        },
     )
-    return db_cursor.fetchone()
+
+    if visibility_res:
+        return visibility_res
+
+    # Proceed with retrieving discussion replies for the thread
+    db_cursor.execute(
+        "SELECT * FROM DiscussionReply WHERE thread_id = %s", (thread_id,)
+    )
+    replies = db_cursor.fetchall()
+    if not replies:
+        return jsonify({"message": "No discussion replies found for this thread"}), 404
+    # Convert the replies data into JSON format and return
+    return jsonify(replies), 200
