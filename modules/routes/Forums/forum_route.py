@@ -164,3 +164,13 @@ def add_reply_to_thread(thread_id: int, course_code: str):
         db.rollback()
         return jsonify({"message": f"Failed to add reply: {str(e)}"}), 500
 
+
+def _fetch_student_details_from_session(session):
+    if session["account_type"] != AccountType.Student.name:
+        return None
+
+    db_cursor = db.cursor(dictionary=True)
+    db_cursor.execute(
+        "SELECT * FROM StudentDetails WHERE account_id = %s", (session["sub"],)
+    )
+    return db_cursor.fetchone()
