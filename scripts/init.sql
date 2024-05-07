@@ -91,8 +91,8 @@ CREATE TABLE DiscussionReply (
     reply_id INT AUTO_INCREMENT PRIMARY KEY,
     thread_id INT,
     user_id INT,
-    reply_time DATETIME,
     reply_text TEXT,
+    reply_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (thread_id) REFERENCES DiscussionThread(thread_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES Account(account_id) ON DELETE CASCADE
 );
