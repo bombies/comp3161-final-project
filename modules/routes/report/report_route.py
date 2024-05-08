@@ -1,7 +1,9 @@
 from flask import Flask, jsonify
 from app import app
 from modules.utils.db import db
-db_cursor = db.cursor()
+
+db_cursor = db.cursor(dictionary=True)
+
 
 # Route for all courses with 50 or more students
 @app.route("/reports/courses/50students", methods=["GET"])
@@ -18,6 +20,7 @@ def courses_50_students():
     courses = db_cursor.fetchall()
     return jsonify(courses), 200
 
+
 # Route for all students enrolled in 5 or more courses
 @app.route("/reports/students/5courses", methods=["GET"])
 def students_5_courses():
@@ -33,6 +36,7 @@ def students_5_courses():
     students = db_cursor.fetchall()
     return jsonify(students), 200
 
+
 # Route for all lecturers teaching 3 or more courses
 @app.route("/reports/lecturers/3courses", methods=["GET"])
 def lecturers_3_courses():
@@ -47,6 +51,7 @@ def lecturers_3_courses():
     db_cursor.execute(query)
     lecturers = db_cursor.fetchall()
     return jsonify(lecturers), 200
+
 
 # Route for the top 10 most enrolled courses
 @app.route("/reports/top10enrolled", methods=["GET"])
@@ -64,6 +69,7 @@ def top_10_enrolled_courses():
     top_courses = db_cursor.fetchall()
     return jsonify(top_courses), 200
 
+
 # Route for the top 10 students with the highest overall averages
 @app.route("/reports/top10students", methods=["GET"])
 def top_10_students():
@@ -79,4 +85,3 @@ def top_10_students():
     db_cursor.execute(query)
     top_students = db_cursor.fetchall()
     return jsonify(top_students), 200
-
