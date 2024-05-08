@@ -3,14 +3,19 @@ from io import TextIOWrapper
 from json import JSONDecodeError
 import os
 from traceback import print_exception
+from typing import TypedDict
 from flask import jsonify, request
 from marshmallow import ValidationError
 from app import app
 import jwt
 
 from modules.models.account import AccountType
-from modules.routes.auth.auth_route import JWTPayload
 
+class JWTPayload(TypedDict):
+    sub: int
+    name: str
+    email: str
+    account_type: str
 
 def handle_route(handler):
     try:

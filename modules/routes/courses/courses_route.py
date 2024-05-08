@@ -1,7 +1,6 @@
 from flask import request, jsonify, send_file
 from app import app
 from modules.models.account import AccountType
-from modules.routes.auth.auth_route import JWTPayload
 from modules.routes.courses.courses_schema import (
     CreateCourseSchema,
     CreateCourseSectionItemSchema,
@@ -12,6 +11,7 @@ from modules.routes.courses.courses_schema import (
 )
 from modules.utils.db import db
 from modules.utils.route_utils import (
+    JWTPayload,
     authenticate,
     create_missing_dirs,
     fetch_session,
