@@ -1,4 +1,6 @@
 import io
+
+import pytest
 from app import app
 from modules.utils.route_utils import delete_file, open_file
 from tests.mockers.course_mocker import CourseMocker
@@ -11,6 +13,18 @@ from tests.mockers.account_mocker import AccountMocker
 test_client = app.test_client()
 account_mocker = AccountMocker()
 admin_token = utils.create_admin_token()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def do_something(request):
+    db_cursor = db.cursor(dictionary=True)
+    # Delete all courses
+    db_cursor.execute("DELETE FROM Course")
+
+    # Delete all accounts
+    db_cursor.execute("DELETE FROM Account")
+
+    db.commit()
 
 
 def test_course_creation():

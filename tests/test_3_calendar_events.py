@@ -1,3 +1,4 @@
+import pytest
 from app import app
 from tests.mockers.calendar_mocker import CalendarMocker
 from tests.mockers.forum_mocker import ForumMocker
@@ -12,6 +13,18 @@ account_mocker = AccountMocker()
 course_mocker = CourseMocker()
 calendar_mocker = CalendarMocker()
 admin_token = utils.create_admin_token()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def do_something(request):
+    db_cursor = db.cursor(dictionary=True)
+    # Delete all courses
+    db_cursor.execute("DELETE FROM Course")
+
+    # Delete all accounts
+    db_cursor.execute("DELETE FROM Account")
+
+    db.commit()
 
 
 def test_calendar_event_creation():
