@@ -4,36 +4,71 @@
 name: Python application
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    push:
+        branches: ["main"]
+    pull_request:
+        branches: ["main"]
 
 permissions:
-  contents: read
+    contents: read
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.10"
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install flake8 pytest
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test with pytest
-      run: |
-        pytest
+    build:
+        runs-on: ubuntu-latest
+        services:
+            mariadb:
+                image: mariadb:10.8.2
+                env:
+                    MYSQL_ROOT_PASSWORD: password
+                    MYSQL_DATABASE: University
+                    MYSQL_USER: user
+                    MYSQL_PASSWORD: password
+                ports:
+                    - 3306:3306
+                options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+        steps:
+            - uses: actions/checkout@v3
+            - name: Verify MariaDB connection
+              env:
+                  PORT: ${{ job.services.mariadb.ports[3306] }}
+              run: |
+                  while ! mysqladmin ping -h"127.0.0.1" -P"$PORT" --silent; do
+                    sleep 1
+                  done
+            - name: Run init.sql script
+              run: |
+                  mysql -u user -h 127.0.0.1 -P 3306 --password="password" < scripts/init.sql
+            - name: Set up Python 3.10
+              uses: actions/setup-python@v3
+              with:
+                  python-version: "3.10"
+            - name: Install dependencies
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install flake8 pytest
+                  if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+            - name: Lint with flake8
+              run: |
+                  # stop the build if there are Python syntax errors or undefined names
+                  flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+                  # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+                  flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+            - name: Test with pytest
+              env:
+                  DATABASE_HOST: 127.0.0.1
+                  DATABASE_USER: user
+                  DATABASE_PASSWORD: password
+                  DATABASE: University
+                  DATABASE_PORT: 3306
+                  MASTER_PASSWORD: password
+                  JWT_SECRET: secret
+              run: |
+                  touch .env
+                  echo "DATABASE_HOST=$DATABASE_HOST" >> .env
+                  echo "DATABASE_USER=$DATABASE_USER" >> .env
+                  echo "DATABASE_PASSWORD=$DATABASE_PASSWORD" >> .env
+                  echo "DATABASE=$DATABASE" >> .env
+                  echo "DATABASE_PORT=$DATABASE_PORT" >> .env
+                  echo "MASTER_PASSWORD=$MASTER_PASSWORD" >> .env
+                  echo "JWT_SECRET=$JWT_SECRET" >> .env
+                  pytest

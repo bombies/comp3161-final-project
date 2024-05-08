@@ -18,7 +18,7 @@ def find_python_files(directory):
             if file.endswith(".py") and file != "__init__.py":
                 # Create a relative path from the starting directory to the file
                 relative_path = os.path.relpath(os.path.join(root, file), directory)
-                python_files.append(relative_path)
+                python_files.append(relative_path.replace("\\", "/"))
     return python_files
 
 
@@ -27,9 +27,10 @@ views = find_python_files(os.path.dirname(os.path.abspath(__file__)))
 
 # Import all files from modules folder.
 for view in views:
-    importlib.import_module(
-        os.path.dirname(os.path.realpath(__file__)).split("/")[-1]
+    view_path = (
+        os.path.dirname(os.path.realpath(__file__)).replace("\\", "/").split("/")[-1]
         + "."
         + view[:-3].replace("/", ".")
     )
+    importlib.import_module(view_path)
     print("App imported " + view + " successfully.")

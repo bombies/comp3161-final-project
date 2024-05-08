@@ -1,6 +1,5 @@
 import os
 import mysql.connector
-from bcrypt import hashpw, gensalt
 
 from modules.models.account import AccountType
 
@@ -23,9 +22,7 @@ if db:
             "INSERT INTO Account (email, password, account_type, name) VALUES (%s, %s, %s, %s)",
             (
                 "root",
-                hashpw(os.getenv("MASTER_PASSWORD").encode("utf-8"), gensalt()).decode(
-                    "utf-8"
-                ),
+                os.getenv("MASTER_PASSWORD"),
                 AccountType.Admin.name,
                 "Root User",
             ),

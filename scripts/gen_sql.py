@@ -1,7 +1,8 @@
+from functools import partial
 from faker import Faker
 import random
 from collections import defaultdict
-from bcrypt import hashpw, gensalt
+import sys, time, multiprocessing
 
 # Initialize Faker generator
 fake = Faker()
@@ -129,6 +130,7 @@ department_courses = {
         "Game Theory",
     ],
 }
+print("Department courses defined")
 
 
 # Generate a unique course code
@@ -157,6 +159,8 @@ for _ in range(200):
 
 # Ensure only unique course codes
 course_examples = list(set(course_examples))
+print("Course examples generated")
+
 
 # Account creation adjusted for unique contact info
 num_lecturers = 50
@@ -172,12 +176,30 @@ def generate_unique_contact(start_sequence, total):
 
 # Generate unique contact numbers for both lecturers and students
 unique_contacts = generate_unique_contact(876, num_lecturers + num_students)
+print("Unique contact numbers generated")
 
 # Initialize a set to track unique emails
 unique_emails = set()
 
-# Modify account creation to ensure unique emails
-for i in range(1, num_lecturers + 1):  # For lecturers
+
+def calculate_eta(start_time, total_items, items_processed):
+    """Calculate the estimated time of arrival (completion)."""
+    current_time = time.time()
+    time_elapsed = current_time - start_time
+    items_per_second = items_processed / time_elapsed if time_elapsed > 0 else 0
+    items_remaining = total_items - items_processed
+    estimated_time_remaining = (
+        items_remaining / items_per_second if items_per_second > 0 else float("inf")
+    )
+    return estimated_time_remaining
+
+
+def create_lecturer(i, eta_start_time):
+    sys.stdout.write(
+        f"\rCreating lecturer accounts: {i}/{num_lecturers} | ETA: {calculate_eta(eta_start_time, num_lecturers, i):.2f} seconds"
+    )
+    sys.stdout.flush()
+
     email = fake.unique.email()  # Using Faker's unique provider
     while email in unique_emails:  # Ensure email is unique
         email = fake.unique.email()
@@ -185,55 +207,82 @@ for i in range(1, num_lecturers + 1):  # For lecturers
 
     dept = random.choice(list(department_courses.keys()))
     password = fake.password()
-    accounts.append(
-        {
-            "account_id": i,
-            "email": email,
-            "password": hashpw(password.encode("utf-8"), gensalt()).decode("utf-8"),
-            "account_type": "Lecturer",
-            "contact_info": unique_contacts[
-                i - 1
-            ],  # Adjusted index for unique contacts
-            "name": fake.name(),
-            "department": dept,
-        }
-    )
+    return {
+        "account_id": i,
+        "email": email,
+        "password": password,
+        "account_type": "Lecturer",
+        "contact_info": unique_contacts[i - 1],  # Adjusted index for unique contacts
+        "name": fake.name(),
+        "department": dept,
+    }, {
+        "account_id": i,
+        "password": password,
+    }
 
-    account_details.append(
-        {
-            "account_id": i,
-            "password": password,
-        }
-    )
 
-# Adjusted student account creation with GPA
-for i in range(num_lecturers + 1, num_lecturers + num_students + 1):
+# Create lecturer accounts
+start_time = time.time()
+for i in range(1, num_lecturers + 1):
+    lecturer, details = create_lecturer(i, start_time)
+    accounts.append(lecturer)
+    account_details.append(details)
+
+print("\nLecturer accounts created")
+
+
+def create_student(i, eta_start_time):
+    sys.stdout.write(
+        f"\rCreating student accounts: {i}/{num_students} | ETA: {calculate_eta(eta_start_time, num_students, i):.2f} seconds"
+    )
+    sys.stdout.flush()
     email = fake.unique.email()
+    while email in unique_emails:
+        email = fake.unique.email()
+    unique_emails.add(email)
+
     major = random.choice(list(department_courses.keys()))
-    # Generate a random GPA from 0 to 4.33, rounded to 2 decimal places
     gpa = round(random.uniform(0, 4.33), 2)
     password = fake.password()
-    accounts.append(
-        {
-            "account_id": i,
-            "email": email,
-            "password": hashpw(password.encode("utf-8"), gensalt()).decode("utf-8"),
-            "account_type": "Student",
-            "contact_info": unique_contacts[
-                i - 1
-            ],  # Assuming unique_contacts is correctly indexed
-            "name": fake.name(),
-            "major": major,
-            "gpa": gpa,  # Include GPA in the account details
-        }
-    )
+    return {
+        "account_id": i,
+        "email": email,
+        "password": password,
+        "account_type": "Student",
+        "contact_info": unique_contacts[
+            i - 1
+        ],  # Assuming unique_contacts is correctly indexed
+        "name": fake.name(),
+        "major": major,
+        "gpa": gpa,
+    }, {
+        "account_id": i,
+        "password": password,
+    }
 
-    account_details.append(
-        {
-            "account_id": i,
-            "password": password,
-        }
-    )
+
+# Use multithreading to create student accounts
+# thread_pool = multiprocessing.Pool(16)
+# with thread_pool as executor:
+#     start_time = time.time()
+#     f = partial(create_student, eta_start_time=start_time)
+#     for student, details in executor.map(
+#         f,
+#         range(num_lecturers + 1, num_lecturers + num_students + 1),
+#     ):
+#         accounts.append(student)
+#         account_details.append(details)
+
+# Create student accounts
+start_time = time.time()
+for i in range(num_lecturers + 1, num_lecturers + num_students + 1):
+    student, details = create_student(i, start_time)
+    accounts.append(student)
+    account_details.append(details)
+
+print("\nStudent accounts created")
+
+
 
 
 num_courses = max(200, num_lecturers)  # Ensure at least as many courses as lecturers
@@ -260,6 +309,8 @@ for lecturer_id in lecturers_without_courses:
     course_to_assign = random.choice(list(lecturer_courses.keys()))
     lecturer_courses[lecturer_id].append(lecturer_courses[course_to_assign].pop())
 
+print("Lecturer courses assigned")
+
 # Initialize student enrollments
 student_enrollments = defaultdict(list)
 
@@ -274,11 +325,15 @@ for acc in accounts:
         student_enrollments[student_id].extend(courses_to_enroll)
         student_id += 1  # Increment student_id for the next student
 
+print("Student enrollments populated")
+
 # Ensure each course has at least 10 students
 course_memberships = defaultdict(list)
 for student_id, courses in student_enrollments.items():
     for course_code in courses:
         course_memberships[course_code].append(student_id)
+
+print("Course memberships populated")
 
 for course_code in all_course_codes:
     while len(course_memberships[course_code]) < 10:
@@ -292,7 +347,10 @@ for course_code in all_course_codes:
             student_enrollments[student_id].append(course_code)
             course_memberships[course_code].append(student_id)
 
-with open("insert_queries.sql", "w") as f:
+print("Course memberships adjusted")
+
+print("Generating SQL insert queries")
+with open("scripts/insert_queries.sql", "w") as f:
     # Insert into Account
     f.write(
         "INSERT INTO Account (account_id, email, password, account_type, contact_info, name) VALUES\n"
@@ -340,7 +398,7 @@ with open("insert_queries.sql", "w") as f:
         "INSERT INTO Course (course_code, course_name, lecturer_id, semester) VALUES\n"
     )
     course_values = [
-        f"('{course[0]}', '{course[1]}', {course[2]}, {course[3]})"
+        f'("{course[0]}", "{course[1]}", {course[2]}, {course[3]})'
         for course in course_examples
     ]
     f.write(",\n".join(course_values))
@@ -350,7 +408,7 @@ with open("insert_queries.sql", "w") as f:
     f.write("INSERT INTO Enrollment (student_id, course_code) VALUES\n")
 
     enrollment_values = [
-        f"({student_id}, '{course_code}')"  # Reference updated student_id starting from 1
+        f'({student_id}, "{course_code}")'  # Reference updated student_id starting from 1
         for student_id, course_codes in student_enrollments.items()
         for course_code in course_codes
     ]
@@ -360,9 +418,3 @@ with open("insert_queries.sql", "w") as f:
 
 
 print("SQL insert queries generated and saved to 'insert_queries.sql'")
-
-with open("account_details.txt", "w") as f:
-    for acc in account_details:
-        f.write(f"{acc['account_id']}: {acc['password']}\n")
-
-print("Account details saved to 'account_details.txt'")
