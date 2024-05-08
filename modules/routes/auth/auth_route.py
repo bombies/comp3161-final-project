@@ -1,3 +1,4 @@
+from typing import TypedDict
 from flask import request, jsonify
 from app import app
 from marshmallow import Schema, fields, validate
@@ -9,6 +10,11 @@ import jwt
 from modules.utils.route_utils import handle_route, protected_route
 from modules.utils.schema_utils import UnionField
 
+class JWTPayload(TypedDict):
+    sub: int
+    name: str
+    email: str
+    account_type: str
 
 class RegisterSchema(Schema):
     email = fields.Str(required=True)

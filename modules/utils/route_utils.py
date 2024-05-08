@@ -9,6 +9,7 @@ from app import app
 import jwt
 
 from modules.models.account import AccountType
+from modules.routes.auth.auth_route import JWTPayload
 
 
 def handle_route(handler):
@@ -75,7 +76,7 @@ def fetch_session():
         if directive != "Bearer":
             return None
 
-        decoded_token = jwt.decode(
+        decoded_token: JWTPayload = jwt.decode(
             token, app.config["JWT_SECRET"], algorithms=["HS256"]
         )
         return decoded_token

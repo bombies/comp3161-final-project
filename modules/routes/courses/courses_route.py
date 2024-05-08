@@ -1,6 +1,7 @@
 from flask import request, jsonify, send_file
 from app import app
 from modules.models.account import AccountType
+from modules.routes.auth.auth_route import JWTPayload
 from modules.routes.courses.courses_schema import (
     CreateCourseSchema,
     CreateCourseSectionItemSchema,
@@ -1032,7 +1033,7 @@ def _fetch_student_details(account_id: str, account_type: str | None = None):
     return db_cursor.fetchone()
 
 
-def _fetch_student_details_from_session(session):
+def _fetch_student_details_from_session(session: JWTPayload):
     if session["account_type"] != AccountType.Student.name:
         return None
 

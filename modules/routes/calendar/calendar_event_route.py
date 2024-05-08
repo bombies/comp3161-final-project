@@ -1,29 +1,45 @@
+import traceback
 from flask import request, jsonify
 from app import app
 from modules.models.account import AccountType
 from modules.routes.courses.courses_route import (
     _check_course_visibility,
+    _fetch_student_details_from_session,
 )
 from modules.routes.calendar.calendar_event_schema import (
     CalendarEventSchema,
     DateRangeSchema,
-
 )
 from modules.utils.db import db
 from modules.utils.route_utils import authenticate, fetch_session, protected_route
 
-@app.route("/calendar/<string:course_id>", methods=["POST"])
-@protected_route(roles=[AccountType.Admin, AccountType.Lecturer])
-def create_calendar_event(course_id: str, course_code: str):
+
+@app.route("/course/<string:course_code>/calendar", methods=["POST", "GET"])
+@protected_route()
+def handle_course_calendar(course_code):
+    if request.method == "POST":
+        return create_calendar_event(course_code)
+    elif request.method == "GET":
+        return get_course_calendar_events(course_code)
+
+
+def create_calendar_event(course_code: str):
     body = CalendarEventSchema().load(request.get_json(force=True))
     auth_res = authenticate([AccountType.Lecturer, AccountType.Admin])
     if auth_res:
         return auth_res
     session = fetch_session()
     if session["account_type"] == AccountType.Student.name:
-        return jsonify({"message": "Students are not allowed to create a course calendar event"}), 403
+        return (
+            jsonify(
+                {
+                    "message": "Students are not allowed to create a course calendar event"
+                }
+            ),
+            403,
+        )
 
-    db_cursor = db.cursor()
+    db_cursor = db.cursor(dictionary=True)
     # Check if the user is a lecturer who teaches this course
     visibility_res = _check_course_visibility(
         fetch_session(),
@@ -44,50 +60,64 @@ def create_calendar_event(course_id: str, course_code: str):
         db.commit()
         return jsonify({"message": "Calendar event created successfully"}), 201
     except Exception as e:
+        traceback.print_exc()
         db.rollback()
         return jsonify({"message": f"Failed to create calendar event: {str(e)}"}), 500
 
-@app.route("/calendar/events/course/<string:course_id>", methods=["GET"])
-@protected_route(roles=[AccountType.Admin, AccountType.Lecturer, AccountType.Student])
+
 def get_course_calendar_events(course_id, course_code):
     auth_res = authenticate([AccountType.Lecturer, AccountType.Admin])
     if auth_res:
         return auth_res
-    session = fetch_session()
-    if session["account_type"] == AccountType.Student.name:
-        return jsonify({"message": "Students are not allowed to get a course calendar event"}), 403
 
-    db_cursor = db.cursor()
+    db_cursor = db.cursor(dictionary=True)
     # Check if the user is a lecturer who teaches this course
     visibility_res = _check_course_visibility(
         fetch_session(),
         course_code,
         err_msgs={
             "lecturer_err": "You can only get a calendar event for your own courses!",
+            "student_err": "You can only get a calendar event for your enrolled courses!",
         },
     )
     if visibility_res:
         return visibility_res
-        
+
     # Retrieve all calendar events
     db_cursor = db.cursor()
     db_cursor.execute("SELECT * FROM CalendarEvent WHERE course_id = %s", (course_id,))
     events = db_cursor.fetchall()
     if not events:
         return jsonify({"message": "No calendar events found for this course"}), 404
-    # Convert the events data into JSON format and return
     return jsonify(events), 200
-    # Return data as per requirements
 
-@app.route("/calendar/events/student/<int:student_id>", methods=["GET"])
-@protected_route([AccountType.Student, AccountType.Admin])
-def get_student_calendar_events(student_id):
+
+@app.route(
+    "/course/<string:course_code>/calendar/student/<int:student_id>",
+    methods=["GET"],
+)
+@protected_route()
+def get_student_calendar_events(course_code: str, student_id: int):
     session = fetch_session()
-    # Check if the session is a student account
-    if session.get("account_type") == AccountType.Student:
-        # Check if the student ID from the session matches the ID passed to the function
-        if session.get("student_id") != student_id:
-            return jsonify({"message": "Unauthorized access to student calendar events"}), 403
+
+    if session["account_type"] == AccountType.Student.name:
+        student_details = _fetch_student_details_from_session(session)
+        if student_details["student_id"] != student_id:
+            return (
+                jsonify({"message": "Unauthorized access to student calendar events"}),
+                403,
+            )
+    elif session["account_type"] == AccountType.Lecturer.name:
+        visibility_res = _check_course_visibility(
+            session,
+            course_code,
+            err_msgs={
+                "lecturer_err": "You can only get a student's calendar events for your own courses!",
+            },
+        )
+
+        if visibility_res:
+            return visibility_res
 
     # Parse the request body to get the start date and end date
     request_data = request.get_json(force=True)
@@ -112,15 +142,19 @@ def get_student_calendar_events(student_id):
         params.append(end_date)
 
     # Retrieve calendar events for the student based on the constructed query
-    db_cursor = db.cursor()
+    db_cursor = db.cursor(dictionary=True)
     db_cursor.execute(query, params)
     events = db_cursor.fetchall()
 
     if not events:
-        return jsonify({"message": "No calendar events found for this student within the specified date range"}), 404
+        return (
+            jsonify(
+                {
+                    "message": "No calendar events found for this student within the specified date range"
+                }
+            ),
+            404,
+        )
 
     # Convert the events data into JSON format and return
     return jsonify(events), 200
-
-
-
