@@ -3,6 +3,7 @@ from io import TextIOWrapper
 from json import JSONDecodeError
 import os
 from traceback import print_exception
+from typing import TypedDict
 from flask import jsonify, request
 from marshmallow import ValidationError
 from app import app
@@ -10,6 +11,11 @@ import jwt
 
 from modules.models.account import AccountType
 
+class JWTPayload(TypedDict):
+    sub: int
+    name: str
+    email: str
+    account_type: str
 
 def handle_route(handler):
     try:
@@ -75,7 +81,7 @@ def fetch_session():
         if directive != "Bearer":
             return None
 
-        decoded_token = jwt.decode(
+        decoded_token: JWTPayload = jwt.decode(
             token, app.config["JWT_SECRET"], algorithms=["HS256"]
         )
         return decoded_token

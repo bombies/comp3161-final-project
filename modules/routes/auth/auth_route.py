@@ -9,7 +9,6 @@ import jwt
 from modules.utils.route_utils import handle_route, protected_route
 from modules.utils.schema_utils import UnionField
 
-
 class RegisterSchema(Schema):
     email = fields.Str(required=True)
     name = fields.Str(required=True)

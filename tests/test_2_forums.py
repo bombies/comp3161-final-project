@@ -1,3 +1,4 @@
+import pytest
 from app import app
 from tests.mockers.forum_mocker import ForumMocker
 from tests.mockers.account_mocker import AccountMocker
@@ -10,6 +11,18 @@ forum_mocker = ForumMocker()
 account_mocker = AccountMocker()
 course_mocker = CourseMocker()
 admin_token = utils.create_admin_token()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def do_something(request):
+    db_cursor = db.cursor(dictionary=True)
+    # Delete all courses
+    db_cursor.execute("DELETE FROM Course")
+
+    # Delete all accounts
+    db_cursor.execute("DELETE FROM Account")
+
+    db.commit()
 
 
 def test_forum_creation():

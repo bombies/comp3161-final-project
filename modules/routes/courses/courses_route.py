@@ -11,6 +11,7 @@ from modules.routes.courses.courses_schema import (
 )
 from modules.utils.db import db
 from modules.utils.route_utils import (
+    JWTPayload,
     authenticate,
     create_missing_dirs,
     fetch_session,
@@ -1032,7 +1033,7 @@ def _fetch_student_details(account_id: str, account_type: str | None = None):
     return db_cursor.fetchone()
 
 
-def _fetch_student_details_from_session(session):
+def _fetch_student_details_from_session(session: JWTPayload):
     if session["account_type"] != AccountType.Student.name:
         return None
 
