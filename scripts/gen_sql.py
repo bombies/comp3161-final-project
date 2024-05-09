@@ -283,8 +283,6 @@ for i in range(num_lecturers + 1, num_lecturers + num_students + 1):
 print("\nStudent accounts created")
 
 
-
-
 num_courses = max(200, num_lecturers)  # Ensure at least as many courses as lecturers
 
 # Initialize lecturer assignments
@@ -369,16 +367,13 @@ with open("scripts/insert_queries.sql", "w") as f:
         if lecturer["account_type"] == "Lecturer"
     ]
     f.write(
-        "INSERT INTO LecturerDetails (lecturer_id, department) VALUES\n"
+        "INSERT INTO LecturerDetails (account_id, department) VALUES\n"
         + ",\n".join(lecturer_values)
         + ";\n\n"
     )
 
     # Writing student details insertions to SQL file
-    f.write("INSERT INTO StudentDetails (student_id, account_id, gpa, major) VALUES\n")
-
-    # Initialize student_id starting from 1
-    student_id = 1
+    f.write("INSERT INTO StudentDetails (account_id, gpa, major) VALUES\n")
 
     # Generate INSERT statements for StudentDetails
     student_details_values = []
@@ -386,9 +381,8 @@ with open("scripts/insert_queries.sql", "w") as f:
         if acc["account_type"] == "Student":
             # Use separate student_id and increment it for each student
             student_details_values.append(
-                f"({student_id}, {acc['account_id']}, {acc['gpa']}, '{acc['major']}')"
+                f"({acc['account_id']}, {acc['gpa']}, '{acc['major']}')"
             )
-            student_id += 1  # Increment student_id for the next student
 
     f.write(",\n".join(student_details_values))
     f.write(";\n\n")
