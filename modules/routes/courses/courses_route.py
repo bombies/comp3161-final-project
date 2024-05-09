@@ -844,6 +844,7 @@ def create_course_section_item(course_code: str, section_id: int):
         file_path = (
             f"data/course-sections/{course_code}/{section_id}/{uploaded_file.filename}"
         )
+        create_missing_dirs(file_path)
         uploaded_file.save(file_path)
 
     db_cursor = db.cursor(dictionary=True)

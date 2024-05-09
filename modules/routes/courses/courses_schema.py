@@ -15,8 +15,8 @@ class UpdateCourseSchema(Schema):
 
 
 class CreateAssignmentSchema(Schema):
-    title = fields.Str(required=True)
-    description = fields.Str(required=False)
+    title = fields.String(required=True)
+    description = fields.String(required=False)
     deadline = fields.DateTime(required=True)
     total_marks = fields.Float(required=True)
 
@@ -26,11 +26,11 @@ class GradeAssignmentSchema(Schema):
 
 
 class CreateCourseSectionSchema(Schema):
-    section_name = fields.Str(required=True)
+    section_name = fields.String(required=True)
 
 
 class CreateCourseSectionItemSchema(Schema):
-    title = fields.Str(required=True)
+    title = fields.String(required=True)
     description = fields.Str(required=False)
     deadline = fields.DateTime(required=False)
     link = fields.Str(required=False)
