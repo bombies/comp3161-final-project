@@ -1,0 +1,1335 @@
+{
+	"info": {
+		"_postman_id": "1642dd00-28db-4012-844a-0c9dd31d1b75",
+		"name": "University",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "33663315"
+	},
+	"item": [
+		{
+			"name": "RegisterUser",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEwMDA1MSwibmFtZSI6IlJvb3QgVXNlciIsImVtYWlsIjoicm9vdCIsImFjY291bnRfdHlwZSI6IkFkbWluIn0.5gHJyR3-2B4V1RCw8KJ-pq4bWv0A3IgAXvFMPMd3NNo",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"samanthasamuels92@gmail.com\",\r\n    \"name\": \"Samantha Samuels\",\r\n    \"contact_info\": \"8767991532\",\r\n    \"account_type\": \"Student\",\r\n    \"major\": \"Engineering\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/auth/register",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"auth",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "adminLogIn",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "\r\n{\r\n    \"user_id\": \"root\",\r\n    \"password\": \"password\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/auth/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "studentLogin",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "",
+						"value": "",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "\r\n{\r\n    \"user_id\": \"timothytaylor@example.net\",\r\n    \"password\": \"W*6AAy%Mwd\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/auth/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "lecturerLogin",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "\r\n{\r\n    \"user_id\": \"moralesdavid@example.com\",\r\n    \"password\": \"L^)0I2Gost\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/auth/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CreateCalendarEvent",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEwMDA1MSwibmFtZSI6IlJvb3QgVXNlciIsImVtYWlsIjoicm9vdCIsImFjY291bnRfdHlwZSI6IkFkbWluIn0.5gHJyR3-2B4V1RCw8KJ-pq4bWv0A3IgAXvFMPMd3NNo",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"course_id\": \"MA233\",\r\n    \"date\": \"2024-05-20 14:30:36\",\r\n    \"event_name\": \"Midterm Exam\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/course/MA233/calendar",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"course",
+						"MA233",
+						"calendar"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getCalendarEvent",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEwMDA1MSwibmFtZSI6IlJvb3QgVXNlciIsImVtYWlsIjoicm9vdCIsImFjY291bnRfdHlwZSI6IkFkbWluIn0.5gHJyR3-2B4V1RCw8KJ-pq4bWv0A3IgAXvFMPMd3NNo",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/course/MA233/calendar",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"course",
+						"MA233",
+						"calendar"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getStudentCourseCalendarEvents",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEwMDA1MSwibmFtZSI6IlJvb3QgVXNlciIsImVtYWlsIjoicm9vdCIsImFjY291bnRfdHlwZSI6IkFkbWluIn0.5gHJyR3-2B4V1RCw8KJ-pq4bWv0A3IgAXvFMPMd3NNo",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"start_date\": \"2024-05-20T00:00:00\",\r\n    \"end_date\": \"2024-05-21T00:00:00\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/course/MA233/calendar/student/1135",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"course",
+						"MA233",
+						"calendar",
+						"student",
+						"1135"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getStudentCalendarEvent",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEwMDA1MSwibmFtZSI6IlJvb3QgVXNlciIsImVtYWlsIjoicm9vdCIsImFjY291bnRfdHlwZSI6IkFkbWluIn0.5gHJyR3-2B4V1RCw8KJ-pq4bWv0A3IgAXvFMPMd3NNo",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"start_date\": \"2024-05-20T00:00:00\",\r\n    \"end_date\": \"2024-05-21T00:00:00\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/calendar/student/1359",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"calendar",
+						"student",
+						"1359"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getCourse",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEwMDA1MSwibmFtZSI6IlJvb3QgVXNlciIsImVtYWlsIjoicm9vdCIsImFjY291bnRfdHlwZSI6IkFkbWluIn0.5gHJyR3-2B4V1RCw8KJ-pq4bWv0A3IgAXvFMPMd3NNo",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/courses",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"courses"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getCourseByCode",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEwMDA1MSwibmFtZSI6IlJvb3QgVXNlciIsImVtYWlsIjoicm9vdCIsImFjY291bnRfdHlwZSI6IkFkbWluIn0.5gHJyR3-2B4V1RCw8KJ-pq4bWv0A3IgAXvFMPMd3NNo",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/courses/MA233",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"courses",
+						"MA233"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getStudentCourse",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEwMDA1MSwibmFtZSI6IlJvb3QgVXNlciIsImVtYWlsIjoicm9vdCIsImFjY291bnRfdHlwZSI6IkFkbWluIn0.5gHJyR3-2B4V1RCw8KJ-pq4bWv0A3IgAXvFMPMd3NNo",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/courses/student/446",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"courses",
+						"student",
+						"446"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getLecturerCourse",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEwMDA1MSwibmFtZSI6IlJvb3QgVXNlciIsImVtYWlsIjoicm9vdCIsImFjY291bnRfdHlwZSI6IkFkbWluIn0.5gHJyR3-2B4V1RCw8KJ-pq4bWv0A3IgAXvFMPMd3NNo",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/courses/lecturer/41",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"courses",
+						"lecturer",
+						"41"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "createCourse",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEwMDA1MSwibmFtZSI6IlJvb3QgVXNlciIsImVtYWlsIjoicm9vdCIsImFjY291bnRfdHlwZSI6IkFkbWluIn0.5gHJyR3-2B4V1RCw8KJ-pq4bWv0A3IgAXvFMPMd3NNo",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"course_code\": \"F03476\",\r\n    \"course_name\": \"Forensic and Chemical Analysis\",\r\n    \"lecturer_id\": 14,  \r\n    \"semester\": \"1\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/courses",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"courses"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "updateCourse",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEwMDA1MSwibmFtZSI6IlJvb3QgVXNlciIsImVtYWlsIjoicm9vdCIsImFjY291bnRfdHlwZSI6IkFkbWluIn0.5gHJyR3-2B4V1RCw8KJ-pq4bWv0A3IgAXvFMPMd3NNo",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"course_name\": \"Biomolecular Biology\"\r\n}\r\n\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/courses/BI365",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"courses",
+						"BI365"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "registerForCourse",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEzMiwibmFtZSI6IlNoYXJvbiBUYW5uZXIiLCJlbWFpbCI6InRpbW90aHl0YXlsb3JAZXhhbXBsZS5uZXQiLCJhY2NvdW50X3R5cGUiOiJTdHVkZW50In0.Uoh_XzEpx8_4pEacpIFFoVsijvykZ7TF9VzvbL30TH8",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/courses/register/MA233",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"courses",
+						"register",
+						"MA233"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "deregisterFromCourse",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEzMiwibmFtZSI6IlNoYXJvbiBUYW5uZXIiLCJlbWFpbCI6InRpbW90aHl0YXlsb3JAZXhhbXBsZS5uZXQiLCJhY2NvdW50X3R5cGUiOiJTdHVkZW50In0.Uoh_XzEpx8_4pEacpIFFoVsijvykZ7TF9VzvbL30TH8",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/courses/unregister/MA233",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"courses",
+						"unregister",
+						"MA233"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getCourseMembers",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEwMDA1MSwibmFtZSI6IlJvb3QgVXNlciIsImVtYWlsIjoicm9vdCIsImFjY291bnRfdHlwZSI6IkFkbWluIn0.5gHJyR3-2B4V1RCw8KJ-pq4bWv0A3IgAXvFMPMd3NNo",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/courses/MA233/members",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"courses",
+						"MA233",
+						"members"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "createAssignments",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsIm5hbWUiOiJMYXVyYSBSdXNzZWxsIiwiZW1haWwiOiJtb3JhbGVzZGF2aWRAZXhhbXBsZS5jb20iLCJhY2NvdW50X3R5cGUiOiJMZWN0dXJlciJ9.AkM8NH5KPSPv9NzcqdIwMWAunDYMbReCUMR_KYDiyDk",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"title\": \"Individual Assignment 1\",\r\n    \"description\": \"This is the first individual graded assignment. Choose one of the three topics discussed in class and write a reflection\",\r\n    \"deadline\": \"2024-06-01 13:20:10\",\r\n    \"total_marks\": 100\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/courses/MA233/assignments",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"courses",
+						"MA233",
+						"assignments"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "submitAssignment",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjU5MSwibmFtZSI6IkFsYW4gRnJlZW1hbiIsImVtYWlsIjoic2NvdHRrYXRobGVlbkBleGFtcGxlLmNvbSIsImFjY291bnRfdHlwZSI6IlN0dWRlbnQifQ.Ba04HpNIbPMz3d_farmSUXWCILcXBkOKwnmx0t3I6iE",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/C:/Users/abish/Downloads/COMP3161  2023 Final Project (1) (6).pdf"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:3000/courses/assignments/1/submit",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"courses",
+						"assignments",
+						"1",
+						"submit"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "studentMA233",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "\r\n{\r\n    \"user_id\": \"scottkathleen@example.com\",\r\n    \"password\": \"!mVOP1zv2+\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/auth/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getSubmissions",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsIm5hbWUiOiJMYXVyYSBSdXNzZWxsIiwiZW1haWwiOiJtb3JhbGVzZGF2aWRAZXhhbXBsZS5jb20iLCJhY2NvdW50X3R5cGUiOiJMZWN0dXJlciJ9.AkM8NH5KPSPv9NzcqdIwMWAunDYMbReCUMR_KYDiyDk",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/courses/assignments/1/submissions",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"courses",
+						"assignments",
+						"1",
+						"submissions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getSpecificSubmission",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsIm5hbWUiOiJMYXVyYSBSdXNzZWxsIiwiZW1haWwiOiJtb3JhbGVzZGF2aWRAZXhhbXBsZS5jb20iLCJhY2NvdW50X3R5cGUiOiJMZWN0dXJlciJ9.AkM8NH5KPSPv9NzcqdIwMWAunDYMbReCUMR_KYDiyDk",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/courses/assignments/1/submissions/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"courses",
+						"assignments",
+						"1",
+						"submissions",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getAssignment",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsIm5hbWUiOiJMYXVyYSBSdXNzZWxsIiwiZW1haWwiOiJtb3JhbGVzZGF2aWRAZXhhbXBsZS5jb20iLCJhY2NvdW50X3R5cGUiOiJMZWN0dXJlciJ9.AkM8NH5KPSPv9NzcqdIwMWAunDYMbReCUMR_KYDiyDk",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/courses/MA233/assignments",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"courses",
+						"MA233",
+						"assignments"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "gradeAssignment",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsIm5hbWUiOiJMYXVyYSBSdXNzZWxsIiwiZW1haWwiOiJtb3JhbGVzZGF2aWRAZXhhbXBsZS5jb20iLCJhY2NvdW50X3R5cGUiOiJMZWN0dXJlciJ9.AkM8NH5KPSPv9NzcqdIwMWAunDYMbReCUMR_KYDiyDk",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"grade\": 94\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/courses/assignments/1/submissions/1/grade",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"courses",
+						"assignments",
+						"1",
+						"submissions",
+						"1",
+						"grade"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "createCourseSections",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsIm5hbWUiOiJMYXVyYSBSdXNzZWxsIiwiZW1haWwiOiJtb3JhbGVzZGF2aWRAZXhhbXBsZS5jb20iLCJhY2NvdW50X3R5cGUiOiJMZWN0dXJlciJ9.AkM8NH5KPSPv9NzcqdIwMWAunDYMbReCUMR_KYDiyDk",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"section_name\": \"Topic 1\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/courses/MA233/sections",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"courses",
+						"MA233",
+						"sections"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getCourseSection",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsIm5hbWUiOiJMYXVyYSBSdXNzZWxsIiwiZW1haWwiOiJtb3JhbGVzZGF2aWRAZXhhbXBsZS5jb20iLCJhY2NvdW50X3R5cGUiOiJMZWN0dXJlciJ9.AkM8NH5KPSPv9NzcqdIwMWAunDYMbReCUMR_KYDiyDk",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/courses/MA233/sections",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"courses",
+						"MA233",
+						"sections"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "createSectionItem",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsIm5hbWUiOiJMYXVyYSBSdXNzZWxsIiwiZW1haWwiOiJtb3JhbGVzZGF2aWRAZXhhbXBsZS5jb20iLCJhY2NvdW50X3R5cGUiOiJMZWN0dXJlciJ9.AkM8NH5KPSPv9NzcqdIwMWAunDYMbReCUMR_KYDiyDk",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "title",
+							"value": "The Fundamentals",
+							"type": "text"
+						},
+						{
+							"key": "description",
+							"value": "This is the first material for this topic.",
+							"type": "text"
+						},
+						{
+							"key": "deadline",
+							"value": "2024-05-31 23:59:59",
+							"type": "text"
+						},
+						{
+							"key": "link",
+							"value": "https://example.com",
+							"type": "text"
+						},
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/C:/Users/abish/Downloads/COMP3161  2023 Final Project (1) (6).pdf"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:3000/courses/MA233/sections/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"courses",
+						"MA233",
+						"sections",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "downloadSectionItem",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsIm5hbWUiOiJMYXVyYSBSdXNzZWxsIiwiZW1haWwiOiJtb3JhbGVzZGF2aWRAZXhhbXBsZS5jb20iLCJhY2NvdW50X3R5cGUiOiJMZWN0dXJlciJ9.AkM8NH5KPSPv9NzcqdIwMWAunDYMbReCUMR_KYDiyDk",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/courses/MA233/sections/1/1/file",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"courses",
+						"MA233",
+						"sections",
+						"1",
+						"1",
+						"file"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "downloadCourseSectionItemDetails",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsIm5hbWUiOiJMYXVyYSBSdXNzZWxsIiwiZW1haWwiOiJtb3JhbGVzZGF2aWRAZXhhbXBsZS5jb20iLCJhY2NvdW50X3R5cGUiOiJMZWN0dXJlciJ9.AkM8NH5KPSPv9NzcqdIwMWAunDYMbReCUMR_KYDiyDk",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/courses/MA233/sections/1/1/file",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"courses",
+						"MA233",
+						"sections",
+						"1",
+						"1",
+						"file"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "createForum",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsIm5hbWUiOiJMYXVyYSBSdXNzZWxsIiwiZW1haWwiOiJtb3JhbGVzZGF2aWRAZXhhbXBsZS5jb20iLCJhY2NvdW50X3R5cGUiOiJMZWN0dXJlciJ9.AkM8NH5KPSPv9NzcqdIwMWAunDYMbReCUMR_KYDiyDk",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"topic\": \"My Discussion\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/course/MA233/forums",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"course",
+						"MA233",
+						"forums"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getCourse",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsIm5hbWUiOiJMYXVyYSBSdXNzZWxsIiwiZW1haWwiOiJtb3JhbGVzZGF2aWRAZXhhbXBsZS5jb20iLCJhY2NvdW50X3R5cGUiOiJMZWN0dXJlciJ9.AkM8NH5KPSPv9NzcqdIwMWAunDYMbReCUMR_KYDiyDk",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000//course/MA233/forums",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"",
+						"course",
+						"MA233",
+						"forums"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "createThread",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsIm5hbWUiOiJMYXVyYSBSdXNzZWxsIiwiZW1haWwiOiJtb3JhbGVzZGF2aWRAZXhhbXBsZS5jb20iLCJhY2NvdW50X3R5cGUiOiJMZWN0dXJlciJ9.AkM8NH5KPSPv9NzcqdIwMWAunDYMbReCUMR_KYDiyDk",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"replies\": \"Yes, this is our forum\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/course/MA233/forums/1/threads",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"course",
+						"MA233",
+						"forums",
+						"1",
+						"threads"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getThread",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsIm5hbWUiOiJMYXVyYSBSdXNzZWxsIiwiZW1haWwiOiJtb3JhbGVzZGF2aWRAZXhhbXBsZS5jb20iLCJhY2NvdW50X3R5cGUiOiJMZWN0dXJlciJ9.AkM8NH5KPSPv9NzcqdIwMWAunDYMbReCUMR_KYDiyDk",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/course/MA233/forums/1/threads",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"course",
+						"MA233",
+						"forums",
+						"1",
+						"threads"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "addReply",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjU5MSwibmFtZSI6IkFsYW4gRnJlZW1hbiIsImVtYWlsIjoic2NvdHRrYXRobGVlbkBleGFtcGxlLmNvbSIsImFjY291bnRfdHlwZSI6IlN0dWRlbnQifQ.Ba04HpNIbPMz3d_farmSUXWCILcXBkOKwnmx0t3I6iE",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"reply_text\": \"I can actually reply!\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/course/MA233/forums/1/threads/1/reply",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"course",
+						"MA233",
+						"forums",
+						"1",
+						"threads",
+						"1",
+						"reply"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getReply",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjU5MSwibmFtZSI6IkFsYW4gRnJlZW1hbiIsImVtYWlsIjoic2NvdHRrYXRobGVlbkBleGFtcGxlLmNvbSIsImFjY291bnRfdHlwZSI6IlN0dWRlbnQifQ.Ba04HpNIbPMz3d_farmSUXWCILcXBkOKwnmx0t3I6iE",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/course/MA233/forums/1/threads/1/replies",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"course",
+						"MA233",
+						"forums",
+						"1",
+						"threads",
+						"1",
+						"replies"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "course50Students",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEwMDA1MSwibmFtZSI6IlJvb3QgVXNlciIsImVtYWlsIjoicm9vdCIsImFjY291bnRfdHlwZSI6IkFkbWluIn0.5gHJyR3-2B4V1RCw8KJ-pq4bWv0A3IgAXvFMPMd3NNo",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/reports/courses/50students",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"reports",
+						"courses",
+						"50students"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "student5Courses",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEwMDA1MSwibmFtZSI6IlJvb3QgVXNlciIsImVtYWlsIjoicm9vdCIsImFjY291bnRfdHlwZSI6IkFkbWluIn0.5gHJyR3-2B4V1RCw8KJ-pq4bWv0A3IgAXvFMPMd3NNo",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/reports/students/5courses",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"reports",
+						"students",
+						"5courses"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "lecturer3Courses",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "",
+						"value": "",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/reports/lecturers/3courses",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"reports",
+						"lecturers",
+						"3courses"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "top10EnrolleedCourses",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "",
+						"value": "",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/reports/top10enrolled",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"reports",
+						"top10enrolled"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "top10Students",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "",
+						"value": "",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/reports/top10students",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"reports",
+						"top10students"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
