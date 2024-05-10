@@ -143,6 +143,17 @@ department_prefixes = {dept: dept[:2].upper() for dept in department_courses.key
 
 # Generate courses with adjustments - This section remains unchanged
 course_examples = []
+lecturer_course_counts = {i: 0 for i in range(1, 51)}
+
+
+def gen_available_lecturer_id():
+    id = random.randint(1, 50)
+    while lecturer_course_counts[id] >= 5:
+        id = random.randint(1, 50)
+    lecturer_course_counts[id] += 1
+    return id
+
+
 for _ in range(200):
     dept = random.choice(list(department_courses.keys()))
     prefix = department_prefixes[dept]
@@ -154,7 +165,7 @@ for _ in range(200):
     course_theme = random.choice(department_courses[dept])
     course_name = course_theme
     semester = random.randint(1, 2)
-    lecturer_id = random.randint(1, 50)
+    lecturer_id = gen_available_lecturer_id()
     course_examples.append((course_code, course_name, lecturer_id, semester))
 
 # Ensure only unique course codes
