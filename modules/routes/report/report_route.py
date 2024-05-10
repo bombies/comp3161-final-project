@@ -17,6 +17,7 @@ def courses_50_students():
     HAVING COUNT(e.student_id) >= 50;
     """
     db_cursor.execute(query)
+    db_cursor.execute("SELECT * FROM Courses_With_50_Or_More_Students;")
     courses = db_cursor.fetchall()
     return jsonify(courses), 200
 
@@ -33,6 +34,7 @@ def students_5_courses():
     HAVING COUNT(e.course_code) >= 5;
     """
     db_cursor.execute(query)
+    db_cursor.execute("SELECT * FROM Students_Taking_5_Or_More_Courses;")
     students = db_cursor.fetchall()
     return jsonify(students), 200
 
@@ -49,6 +51,7 @@ def lecturers_3_courses():
     HAVING COUNT(c.course_code) >= 3;
     """
     db_cursor.execute(query)
+    db_cursor.execute("SELECT * FROM Lecturers_Teaching_3_Or_More_Courses;")
     lecturers = db_cursor.fetchall()
     return jsonify(lecturers), 200
 
@@ -66,6 +69,7 @@ def top_10_enrolled_courses():
     LIMIT 10;
     """
     db_cursor.execute(query)
+    db_cursor.execute("SELECT * FROM Top_10_Enrolled_Courses;")
     top_courses = db_cursor.fetchall()
     return jsonify(top_courses), 200
 
@@ -73,15 +77,20 @@ def top_10_enrolled_courses():
 # Route for the top 10 students with the highest overall averages
 @app.route("/reports/top10students", methods=["GET"])
 def top_10_students():
-    query = """
-    CREATE OR REPLACE VIEW Top_10_Students_Highest_Averages AS
-    SELECT s.student_id, s.gpa, AVG(a.grade) AS average_grade
+    student_rank_query = """
+    CREATE OR REPLACE VIEW Student_Rank AS
+    SELECT s.student_id, s.gpa, DENSE_RANK() OVER (ORDER BY s.gpa DESC) AS rank
     FROM StudentDetails s
-    JOIN AssignmentSubmission a ON s.student_id = a.student_id
-    GROUP BY s.student_id
-    ORDER BY AVG(a.grade) DESC
-    LIMIT 10;
     """
+
+    query = """
+    SELECT s.student_id, s.gpa, sr.rank
+    FROM StudentDetails AS s
+    JOIN Student_Rank AS sr ON s.student_id = sr.student_id
+    WHERE sr.rank <= 10
+    """
+
+    db_cursor.execute(student_rank_query)
     db_cursor.execute(query)
     top_students = db_cursor.fetchall()
     return jsonify(top_students), 200
